@@ -22,6 +22,10 @@ class ContrailUVE:
         self._api_con = ContrailApiConnection(ip=ip, port=port,
                                  username = username, password = password)
 
+
+    def get_object_deep(self, object_name, obj_type, select_fields = []):
+        pass
+
     def get_object(self, object_name, obj_type, select_fields = []):
         uve_path = "analytics/uves/" + obj_type
         object_path = uve_path + "/" +  object_name + "?flat"

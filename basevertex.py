@@ -11,6 +11,7 @@ from vertex_print import vertexPrint
 from contrailnode_api import ControlNode
 from contrailnode_api import ConfigNode
 from contrailnode_api import Vrouter
+from contrailnode_api import AnalyticsNode
 
 def create_global_context():
     gcontext = {}
@@ -57,6 +58,7 @@ class baseVertex(object):
             contrail_control = ContrailUtils.get_control_nodes(self.config_ip, self.config_port)
             self.context['contrail']['config'] = self.config = ConfigNode(contrail_control['config_nodes'])
             self.context['contrail']['control'] = self.control = ControlNode(contrail_control['control_nodes'])
+            self.context['contrail']['analytics'] = self.analytics = AnalyticsNode(contrail_control['analytics_nodes'])
             self.context['config_ip'] = self.config_ip
             self.context['config_port'] = self.config_port
 
@@ -92,6 +94,7 @@ class baseVertex(object):
             self._store_vertex(vertex_type, uuid, obj)
             self._store_config(vertex_type, uuid, obj, self.config_objs)
             self._store_control_config(vertex_type, obj)
+            self._store_analytics_uves(vertex_type, uuid, fq_name, obj)
             self._store_agent_config(vertex_type, obj)
             self._process_local(vertex_type, uuid, obj)
             self._process_dependants(vertex_type, uuid, fq_name, dependant_vertexes)
@@ -129,7 +132,7 @@ class baseVertex(object):
             'config': {},
             'agent' : {},
             'control': {},
-            'analytics': {},
+            'analytics': {'uve':{}},
         }
         return vertex
 
@@ -211,6 +214,17 @@ class baseVertex(object):
             self.context['visited_vertexes'][uuid]['control']['config'] = {}
         config = self.context['visited_vertexes'][uuid]['control']['config']
         Utils.merge_dict(config, iobjs)
+
+    def _store_analytics_uves(self, vertex_type, uuid, fq_name, obj):
+        # supported uve types, this check will be removed and 
+        # it would automatic check in the analytics calss
+        supported_list = ['virtual-machine-interface', 'virtual-machine', 'virtual-network']
+        if vertex_type not in supported_list:
+            return
+        aobj = self.analytics.get_object(object_type=vertex_type, object_name=fq_name)
+        if aobj:
+            self.context['visited_vertexes'][uuid]['analytics']['uve'].update(aobj)
+
 
     def _store_agent_config(self, vertex_type, obj):
         url_str = 'Snh_ShowIFMapAgentReq?table_name=&node_sub_string='

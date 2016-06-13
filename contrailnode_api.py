@@ -1,5 +1,6 @@
 from introspect import Introspect
 from contrail_api import ContrailApi
+from contrail_uve import ContrailUVE
 
 class ContrailNodes:
     def __init__(self, contrail_info):
@@ -7,6 +8,17 @@ class ContrailNodes:
         self.config = []
         self.vrouter = []
         self.control = []
+
+class AnalyticsNode:
+    def __init__(self, analytics_nodes):
+        self._analytics_nodes = analytics_nodes
+        self._analytics_api = None
+        for node in analytics_nodes:
+            self._analytics_api = ContrailUVE(ip=node['ip_address'], port=node['port'])
+            break
+    
+    def get_object(self, category='uve', object_type=None, object_name=None, select_fields=[]):
+        return self._analytics_api.get_object(object_name, object_type, select_fields)
 
 class ConfigNode:
     def __init__(self, config_nodes):

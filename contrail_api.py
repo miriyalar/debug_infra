@@ -30,6 +30,9 @@ class ContrailApi:
         stdout.setLevel('DEBUG')
         log.addHandler(stdout)
 
+        self._ip = ip
+        self._port = port
+
         #TODO handle auth excpetion
         try:
             self._api_con = ContrailApiConnection(ip=ip, port=port,
@@ -59,6 +62,12 @@ class ContrailApi:
 	#Call the ContrailAPIConection with token
 
     #def _get_keystone_token():
+
+    def get_ip(self):
+        return self._ip
+
+    def get_port(self):
+        return self._port
 
     def post(self, object_name, data):
         val = self._api_con.post_json(object_name, data)

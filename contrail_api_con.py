@@ -107,6 +107,7 @@ class ContrailApiConnection:
             log.critical(("Error connecting to the server %s:%s") % (ip, port))
 
 	resp_code = self._get_resp_code(_con)
+        #import pdb; pdb.set_trace()
 	if resp_code == 200:
            self._con = _con
 	elif resp_code == 401:
