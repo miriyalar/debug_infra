@@ -11,35 +11,22 @@ from basevertex import baseVertex
 
 class debugVertexFIP(baseVertex):
     dependant_vertexes = ['debugVertexVMI']
+    vertex_type = 'floating-ip'
 
     def __init__(self, context=None, **kwargs):
-        self.vertex_type = 'floating-ip'
-        self.obj_type = 'floating-ip'
-        super(debugVertexFIP, self).__init__(context, self.vertex_type, **kwargs)
-        if self._is_vertex_type_exists_in_path(self.vertex_type):
-            return
-        self.logger = logger(logger_name=self.get_class_name()).get_logger()
-        obj_type = kwargs.get('obj_type', None)
-        if not obj_type:
-            obj_type = self.obj_type
-        self.floating_ip_address = kwargs.get('floating_ip_address', None)
-        fips = self._locate_fip(context=self.context, element = self.element, 
-                                obj_type=obj_type, 
-                                floating_ip_address=self.floating_ip_address)
-        self.process_vertexes(self.vertex_type, fips, self.dependant_vertexes)
+        self.floating_ip_address = kwargs['floating_ip_address']
+        self.match_kv = {'floating_ip_address': self.floating_ip_address}
+        super(debugVertexFIP, self).__init__(context=context, **kwargs)
 
-
-    def _locate_fip(self, context, element=None, **kwargs):
+    def get_schema(self):
         schema_dict = {
                 "virtual-machine-interface": {
                         'uuid': 'floating_ip_back_refs',
                 }
         }
-        #Input_dict
-        obj_list = self._locate_obj(schema_dict, element, **kwargs)
-        return obj_list
+        return schema_dict
 
-    def _process_self(self, vertex_type, uuid, vertex):
+    def process_self(self, vertex_type, uuid, vertex):
         # Agent
         agent = {}
         agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex_type, vertex)

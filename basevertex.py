@@ -6,18 +6,16 @@ from contrail_api import ContrailApi
 from introspect import Introspect
 from contrail_utils import ContrailUtils
 from utils import Utils
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from vertex_print import vertexPrint
-from contrailnode_api import ControlNode
-from contrailnode_api import ConfigNode
-from contrailnode_api import Vrouter
-from contrailnode_api import AnalyticsNode
+from contrailnode_api import ControlNode, ConfigNode, Vrouter, AnalyticsNode
+from abc import ABCMeta, abstractmethod
 
 def create_global_context():
     gcontext = {}
     gcontext['path'] = []
     gcontext['visited_vertexes'] = {}
-    gcontext['vertexes'] = {}
+    gcontext['vertexes'] = defaultdict(list)
     #gcontext['visited_nodes'] = OrderedDict()
     gcontext['visited_nodes'] = {}
     gcontext['visited_vertexes_inorder'] = []
@@ -29,9 +27,9 @@ def create_global_context():
 
 
 class baseVertex(object):
-    dependant_vertexes = []
-    def __init__(self, context=None, vertex_type=None, **kwargs):
-        super(baseVertex, self).__init__()
+    '''Abstract Base Class for Vertex'''
+    __metaclass__ = ABCMeta
+    def __init__(self, context=None, **kwargs):
         self.config = None
         self.control = None
         self.analytics = None
@@ -41,14 +39,30 @@ class baseVertex(object):
             self.context = create_global_context()
         else:
             self.context = context
+        if self._is_vertex_type_exists_in_path(self.vertex_type):
+            return
         self.element = kwargs.get('element', None)
         self.uuid = kwargs.get('uuid', None)
         self.fq_name = kwargs.get('fq_name', None)
-        self._set_context_vertex_type(vertex_type)
+        self.display_name = kwargs.get('display_name', None)
         self.config_ip = kwargs.get('config_ip', self.context.get('config_ip'))
         self.config_port = kwargs.get('config_port', self.context.get('config_port'))
-        self.logger = None
+        self.obj_type = kwargs.get('obj_type', None) or self.vertex_type
+        self.logger = logger(logger_name=self.get_class_name()).get_logger()
         self._set_contrail_control_objs(self.context)
+        self.schema = self.get_schema()
+        if not hasattr(self, 'match_kv'):
+             self.match_kv = {'uuid': self.uuid, 'fq_name': self.fq_name,
+                              'display_name': self.display_name}
+        self.process_vertexes(self._locate_obj())
+
+    @abstractmethod
+    def process_self(self, vertex_type, uuid, vertex):
+        pass
+
+    @abstractmethod
+    def get_schema(self, context, **kwargs):
+        pass
 
     def _set_contrail_control_objs(self, context):
         self.config = context['contrail'].get('config', None)
@@ -64,16 +78,12 @@ class baseVertex(object):
 
     def _set_contrail_vrouter_objs(self, vertex_type, obj):
         contrail_info = ContrailUtils.get_contrail_info(obj[vertex_type]['uuid'],
-                                                        vertex_type, 
+                                                        vertex_type,
                                                         self.config_ip,
                                                         self.config_port,
                                                         context_path=self.context['path'],
                                                         fq_name=obj[vertex_type]['fq_name'])
         self.vrouter = Vrouter(contrail_info['vrouter'])
-                                
-    def _set_context_vertex_type(self, vertex_type):
-        if vertex_type not in self.context['vertexes']:
-            self.context['vertexes'][vertex_type] = []
 
     def get_context(self):
         return self.context
@@ -84,7 +94,8 @@ class baseVertex(object):
     def get_class_name(self):
         return self.__class__.__name__
 
-    def process_vertexes(self, vertex_type, objs, dependant_vertexes):
+    def process_vertexes(self, objs):
+        vertex_type = self.vertex_type
         for obj in objs:
             uuid = obj[vertex_type]['uuid']
             fq_name = ':'.join(obj[vertex_type]['fq_name'])
@@ -96,8 +107,8 @@ class baseVertex(object):
             self._store_control_config(vertex_type, obj)
             self._store_analytics_uves(vertex_type, uuid, fq_name, obj)
             self._store_agent_config(vertex_type, obj)
-            self._process_self(vertex_type, uuid, obj)
-            self._process_dependants(vertex_type, uuid, fq_name, dependant_vertexes)
+            self.process_self(vertex_type, uuid, obj)
+            self._process_dependants(vertex_type, uuid, fq_name, self.dependant_vertexes)
 
     def _add_to_context_path(self, element):
         if not self.context:
@@ -123,7 +134,7 @@ class baseVertex(object):
             self._add_to_context_path(element)
             eval(dependant_vertex)(context=self.context, element=element)
             self._remove_from_context_path(element)
-    
+
     def _create_vertex(self, vertex_type, uuid, fq_name=None):
         vertex = {
             'uuid': uuid,
@@ -139,11 +150,10 @@ class baseVertex(object):
     def _store_vertex(self, vertex_type, uuid, config_obj):
         fq_name = ':'.join(config_obj[vertex_type]['fq_name'])
         vertex = self._create_vertex(vertex_type, uuid, fq_name)
-        #vertex['config'].append(config_obj)
         self.context['vertexes'][vertex_type].append(vertex)
         self.context['visited_vertexes'][uuid] = vertex
         self.context['visited_nodes'][vertex_type + ', ' + fq_name] = vertex
-        visited_vertexes_inorder = {'uuid': config_obj[vertex_type]['uuid'], 
+        visited_vertexes_inorder = {'uuid': config_obj[vertex_type]['uuid'],
                                  'fq_name': fq_name,
                                  'display_name': config_obj[vertex_type]['display_name'],
                                  'vertex_type': vertex_type}
@@ -170,17 +180,17 @@ class baseVertex(object):
 
     def get_class(self):
         return self.__class__.__name__
-                
-    def _locate_obj(self, schema_dict, element, **kwargs):
+
+    def _locate_obj(self):
         input_dict = {'match_dict': {}}
-        if element != None:
-            element_type = element['type']
-            element_uuid = element['uuid']
-            input_dict = {"type": element_type, 
+        if self.element != None:
+            element_type = self.element['type']
+            element_uuid = self.element['uuid']
+            input_dict = {"type": element_type,
                           "match_dict" : {'uuid': element_uuid} }
         else:
-            input_dict['type'] = kwargs.pop('obj_type')
-            for key,value in kwargs.iteritems():
+            input_dict['type'] = self.obj_type
+            for key,value in self.match_kv.iteritems():
                 #if key == 'obj_type':
                 #    input_dict['type'] = value
                 #else:
@@ -189,14 +199,14 @@ class baseVertex(object):
                         #for now just one match
                         break
         object_type = input_dict['type']
-        key , value = input_dict['match_dict'].popitem()
+        key, value = input_dict['match_dict'].popitem()
         try:
-            schema_to_use = schema_dict[object_type][key]
+            schema_to_use = self.schema[object_type][key]
         except KeyError:
             schema_to_use = None
         where = '%s==%s' % (key, value)
         ret_obj_list, self.config_objs = self.config.get_object(object_type,
-                                                  schema_to_use=schema_to_use, 
+                                                  schema_to_use=schema_to_use,
                                                   where=where)
         return ret_obj_list
 
@@ -204,7 +214,7 @@ class baseVertex(object):
         cobj = config_objs.get(uuid, None)
         if cobj:
             self.context['visited_vertexes'][uuid]['config'].update(cobj)
-                                                          
+
     def _store_control_config(self, vertex_type, obj):
         url_str = 'Snh_IFMapTableShowReq?table_name=&search_string='
         uuid = obj[vertex_type]['uuid']
@@ -216,7 +226,7 @@ class baseVertex(object):
         Utils.merge_dict(config, iobjs)
 
     def _store_analytics_uves(self, vertex_type, uuid, fq_name, obj):
-        # supported uve types, this check will be removed and 
+        # supported uve types, this check will be removed and
         # it would automatic check in the analytics calss
         supported_list = ['virtual-machine-interface', 'virtual-machine', 'virtual-network']
         if vertex_type not in supported_list:
@@ -234,7 +244,7 @@ class baseVertex(object):
         if 'config' not in self.context['visited_vertexes'][uuid]['agent']:
             self.context['visited_vertexes'][uuid]['agent']['config'] = {}
         config = self.context['visited_vertexes'][uuid]['agent']['config']
-        Utils.merge_dict(config, iobjs)        
+        Utils.merge_dict(config, iobjs)
 
     # Config detail from agent
     def _get_agent_config_db(self, host_ip, agent_port, vertex_type, vertex):

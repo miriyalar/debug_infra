@@ -11,29 +11,9 @@ from basevertex import baseVertex
 
 class debugVertexVN(baseVertex):
     dependant_vertexes = ['debugVertexVMI']
-    def __init__(self, context=None, **kwargs):
-        self.vertex_type = 'virtual-network'
-        self.obj_type = 'virtual-network'
-        super(debugVertexVN, self).__init__(context, self.vertex_type, **kwargs)
-        if self._is_vertex_type_exists_in_path(self.vertex_type):
-            return
-        self.logger = logger(logger_name=self.get_class_name()).get_logger()
-        obj_type = kwargs.get('obj_type', None)
-        if not obj_type:
-            obj_type = self.obj_type
-        self.display_name = kwargs.get('display_name', None)
-        self.uuid = kwargs.get('uuid', None)
-        self.fq_name = kwargs.get('fq_name', None)
+    vertex_type = 'virtual-network'
 
-        vns = self._locate_vn(context=self.context, 
-                              element=self.element,
-                              obj_type=obj_type,
-                              display_name=self.display_name,
-                              fq_name=self.fq_name,
-                              uuid=self.uuid)
-        self.process_vertexes(self.vertex_type, vns, self.dependant_vertexes)
-
-    def _process_self(self, vertex_type, uuid, vertex):
+    def process_self(self, vertex_type, uuid, vertex):
         agent = {}
         agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex_type, vertex)
         self._add_agent_to_context(uuid, agent)
@@ -61,7 +41,7 @@ class debugVertexVN(baseVertex):
         print pstr
         return oper
                 
-    def _locate_vn(self, context, element=None, **kwargs):
+    def get_schema(self, **kwargs):
         #VN Name, VN UUID, VMI UUID
         schema_dict = {
                 "virtual-machine": {
@@ -70,10 +50,8 @@ class debugVertexVN(baseVertex):
                 "virtual-machine-interface": {
                     "uuid": 'virtual_network_refs'
                 }
-
         }
-        vn_list = self._locate_obj(schema_dict, element, **kwargs)
-        return vn_list
+        return schema_dict
 
 
 def parse_args(args):
@@ -120,8 +98,4 @@ if __name__ == '__main__':
     vP.print_object_catalogue(context, False)
     #vP.print_visited_vertexes_inorder(context)
     vP.convert_json(context)
-
-
-
-
 
