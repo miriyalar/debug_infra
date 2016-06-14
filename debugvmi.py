@@ -32,7 +32,7 @@ class debugVertexVMI(baseVertex):
                                 display_name=self.display_name)
         self.process_vertexes(self.vertex_type, vmis, self.dependant_vertexes)
 
-    def _process_local(self, vertex_type, uuid, vertex):
+    def _process_self(self, vertex_type, uuid, vertex):
         agent = {}
         agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex_type, vertex)
         self._add_agent_to_context(uuid, agent)

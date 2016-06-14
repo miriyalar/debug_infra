@@ -39,7 +39,7 @@ class debugVertexFIP(baseVertex):
         obj_list = self._locate_obj(schema_dict, element, **kwargs)
         return obj_list
 
-    def _process_local(self, vertex_type, uuid, vertex):
+    def _process_self(self, vertex_type, uuid, vertex):
         # Agent
         agent = {}
         agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex_type, vertex)

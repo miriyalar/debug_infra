@@ -96,7 +96,7 @@ class baseVertex(object):
             self._store_control_config(vertex_type, obj)
             self._store_analytics_uves(vertex_type, uuid, fq_name, obj)
             self._store_agent_config(vertex_type, obj)
-            self._process_local(vertex_type, uuid, obj)
+            self._process_self(vertex_type, uuid, obj)
             self._process_dependants(vertex_type, uuid, fq_name, dependant_vertexes)
 
     def _add_to_context_path(self, element):
