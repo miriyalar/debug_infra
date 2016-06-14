@@ -1,3 +1,5 @@
+import os
+
 class Utils():
     def convert_unicode():
         def convert_unicode(input):
@@ -28,4 +30,45 @@ class Utils():
                     v1.append(v2)
             else:
                 d1[k] = v2
+
+
+    @staticmethod
+    def dict_to_filesystem(d, cur_path='./', console=False):
+        if isinstance(d, dict):
+            for k, v in d.items():
+                v = d.get(k)
+                path = os.path.join(cur_path, k)
+                if isinstance(v, dict) or isinstance(v, list):
+                    if not os.path.exists(path):
+                        os.makedirs(path)
+                    if console:
+                        print path
+                    Utils.dict_to_filesystem(v, path)
+                else:
+                    input_file = open(path, 'a')
+                    input_file.write(str(v))
+                    input_file.close()
+                    if console:
+                        print path, v
+        elif isinstance(d, list):
+            for i, v in enumerate(d):
+                path = os.path.join(cur_path, str(i))
+                if isinstance(v, dict) or isinstance(v, list):
+                    if not os.path.exists(path):
+                        os.makedirs(path)
+                    if console:
+                        print path
+                    Utils.dict_to_filesystem(v, path)
+                else:
+                    input_file = open(path, 'a')
+                    input_file.write(str(v))
+                    input_file.close()
+                    if console:
+                        print ' ' + v
+        else:
+            input_file = open(cur_path, 'a')
+            input_file.write(str(d))
+            input_file.close()
+            if console:
+                print cur_path, d
 
