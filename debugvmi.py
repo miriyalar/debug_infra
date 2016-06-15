@@ -11,28 +11,9 @@ from basevertex import baseVertex
 
 class debugVertexVMI(baseVertex):
     dependant_vertexes = ['debugVertexVM', 'debugVertexVN', 'debugVertexSG']
-    #dependant_vertexes = ['debugVertexVM', 'debugVertexVN']
+    vertex_type = 'virtual-machine-interface'
 
-    def __init__(self, context=None, **kwargs):
-        self.vertex_type = 'virtual-machine-interface'
-        self.obj_type = 'virtual-machine-interface'
-        super(debugVertexVMI, self).__init__(context, self.vertex_type, **kwargs)
-        if self._is_vertex_type_exists_in_path(self.vertex_type):
-            return
-        self.logger = logger(logger_name=self.get_class_name()).get_logger()
-        obj_type = kwargs.get('obj_type', None)
-        if not obj_type:
-            obj_type = self.obj_type
-        self.display_name = kwargs.get('display_name', None)
-        self.uuid = kwargs.get('uuid', None)
-        vmis = self._locate_vmi(context=self.context, 
-                                element=self.element,
-                                obj_type=obj_type, 
-                                uuid=self.uuid, 
-                                display_name=self.display_name)
-        self.process_vertexes(self.vertex_type, vmis, self.dependant_vertexes)
-
-    def _process_self(self, vertex_type, uuid, vertex):
+    def process_self(self, vertex_type, uuid, vertex):
         agent = {}
         agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex_type, vertex)
         self._add_agent_to_context(uuid, agent)
@@ -40,7 +21,7 @@ class debugVertexVMI(baseVertex):
         control['oper'] = {}
         self._add_control_to_context(uuid, control)
 
-    def _locate_vmi(self, context, element=None, **kwargs):
+    def get_schema(self):
         #VM UUID, VMI UUID, VMI Name, VN UUID
         schema_dict = {
                 'virtual-machine': {
@@ -57,10 +38,7 @@ class debugVertexVMI(baseVertex):
                     'uuid': 'virtual_machine_interface_refs'
                 }
         }
-        self.schema_dict = schema_dict
-        #Input_dict
-        vmi_list = self._locate_obj(schema_dict, element, **kwargs)
-        return vmi_list
+        return schema_dict
 
     def _get_agent_oper_db(self, host_ip, agent_port, vertex_type, vertex):
         error = False
@@ -114,9 +92,6 @@ class debugVertexVMI(baseVertex):
         print pstr
         oper['interface'] = url_dict_resp
         return oper
-
-
-
 
 def parse_args(args):
     defaults = {

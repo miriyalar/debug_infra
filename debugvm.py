@@ -11,27 +11,9 @@ from basevertex import baseVertex
 
 class debugVertexVM(baseVertex):
     dependant_vertexes = ['debugVertexVMI']
-    def __init__(self, context=None, **kwargs):
-        self.vertex_type = 'virtual-machine'
-        self.obj_type = 'virtual-machine'
-        super(debugVertexVM, self).__init__(context, self.vertex_type, **kwargs)
-        if self._is_vertex_type_exists_in_path(self.vertex_type):
-            return
-        self.logger = logger(logger_name=self.get_class_name()).get_logger()
-        obj_type = kwargs.get('obj_type', None)
-        if not obj_type:
-            obj_type = self.obj_type
-        self.display_name = kwargs.get('display_name', None)
-        self.uuid = kwargs.get('uuid', None)
-        vms = self._locate_vm(context=self.context, 
-                              element = self.element, 
-                              obj_type=obj_type, 
-                              uuid=self.uuid,
-                              display_name=self.display_name)
-        self.process_vertexes(self.vertex_type, vms, self.dependant_vertexes)
+    vertex_type = 'virtual-machine'
 
-
-    def _locate_vm(self, context, element=None, **kwargs):
+    def get_schema(self):
         #VMI, VM name, VM UUID
         schema_dict = {
                 "virtual-machine-interface": {
@@ -39,11 +21,9 @@ class debugVertexVM(baseVertex):
                     'display_name': 'virtual_machine_refs',
                 }
         }
-        #Input_dict
-        obj_list = self._locate_obj(schema_dict, element, **kwargs)
-        return obj_list
+        return schema_dict
 
-    def _process_self(self, vertex_type, uuid, vertex):
+    def process_self(self, vertex_type, uuid, vertex):
         # Agent
         agent = {}
         agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex_type, vertex)

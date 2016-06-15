@@ -12,29 +12,9 @@ from basevertex import baseVertex
 
 class debugVertexSG(baseVertex):
     dependant_vertexes = ['debugVertexVMI']
-    def __init__(self, context=None, **kwargs):
-        self.vertex_type = 'security-group'
-        self.obj_type = 'security-group'
-        super(debugVertexSG, self).__init__(context, self.vertex_type, **kwargs)
-        if self._is_vertex_type_exists_in_path(self.vertex_type):
-            return
-        if not self.logger:
-            self.logger = logger(logger_name=self.get_class_name(), console_level=logging.ERROR).get_logger()
-        obj_type = kwargs.get('obj_type', None)
-        if not obj_type:
-            obj_type = self.obj_type
-        self.uuid = kwargs.get('uuid', None)
-        self.display_name = kwargs.get('display_name', None)
-        self.security_group_id = kwargs.get('security_group_id', None)
-        sgs = self._locate_sg(context=self.context, 
-                              element=self.element,
-                              display_name=self.display_name,
-                              uuid=self.uuid,
-                              security_group_id=self.security_group_id,
-                              obj_type=obj_type)
-        self.process_vertexes(self.vertex_type, sgs, self.dependant_vertexes)
+    vertex_type = 'security-group'
 
-    def _process_self(self, vertex_type, uuid, vertex):
+    def process_self(self, vertex_type, uuid, vertex):
         agent = {}
         agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex_type, vertex)
         self._add_agent_to_context(uuid, agent)
@@ -78,7 +58,7 @@ class debugVertexSG(baseVertex):
         print pstr
         return oper
             
-    def _locate_sg(self, context, element=None, **kwargs):
+    def get_schema(self):
         schema_dict = {
                 "virtual-machine": {
                         "uuid": 'virtual_machine_interface_back_refs.security_group_refs'
@@ -87,8 +67,7 @@ class debugVertexSG(baseVertex):
                         "uuid": 'security_group_refs'
                 }
         }
-        sg_list = self._locate_obj(schema_dict, element, **kwargs)
-        return sg_list
+        return schema_dict
 
 
 def parse_args(args):
