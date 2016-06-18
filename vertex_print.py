@@ -1,5 +1,6 @@
 from pprint import pprint
 import json
+from utils import Utils
 
 class vertexPrint(object):
     context = None
@@ -100,19 +101,28 @@ class vertexPrint(object):
     def print_object_list(self, context, object_type, details):
         print 'print_object_list'
 
+    
+    def _get_objects_from_context(self, context, object_type=None):
+        get_objs = {}
+        get_objs['visited_vertexes'] = {}
+        get_objs['summary_of_visited_vertexes'] = {}
+        if object_type:
+            get_objs['visited_vertexes'].update(context['vertexes'].get(object_type, {}))
+        else:
+            get_objs['visited_vertexes'].update(context['vertexes'])
+        get_objs['summary_of_visited_vertexes'] = context['visited_vertexes_inorder']
+        return get_objs
 
     def convert_json(self, context, object_type=None, detail=True, file_name='debug_vertexes_output.json'):
-        print_list = {}
-        print_list['visited_vertexes'] = {}
-        print_list['summary_of_visited_vertexes'] = {}
-        if object_type:
-            print_list['visited_vertexes'].update(context['vertexes'].get(object_type, {}))
-        else:
-            print_list['visited_vertexes'].update(context['vertexes'])
-        print_list['summary_of_visited_vertexes'] = context['visited_vertexes_inorder']
+        print_list = self._get_objects_from_context(context, object_type)
         with open(file_name, 'w') as fp:
             json.dump(print_list, fp)
             fp.close()
+
+    def convert_to_file_structure(self, context, object_type=None, cur_path='./', console_print=False):
+        convert_dict = self._get_objects_from_context(context, object_type)
+        Utils.dict_to_filesystem(convert_dict, cur_path=cur_path, console=console_print)
+
 
 if __name__ == "__main__":
     import pdb;pdb.set_trace()
