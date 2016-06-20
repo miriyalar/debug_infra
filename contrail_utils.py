@@ -205,7 +205,8 @@ class ContrailUtils(object):
             'virtual-network' : 'virtual_machine_interface_back_refs.virtual_machine_refs',
             'floating-ip': 'virtual_machine_interface_refs.virtual_machine_refs',
             'security-group' : 'virtual_machine_interface_back_refs.virtual_machine_refs',
-            'virtual-machine-interface': 'virtual_machine_refs'
+            'virtual-machine-interface': 'virtual_machine_refs',
+            'instance-ip': 'virtual_machine_interface_refs.virtual_machine_refs'
         }
 
         fq_name = kwargs.get('fq_name', None)
