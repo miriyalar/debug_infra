@@ -36,7 +36,10 @@ class debugVertexVMI(baseVertex):
                 },
                 'floating-ip': {
                     'uuid': 'virtual_machine_interface_refs'
-                }
+                },
+                'instance-ip': {
+                    'uuid': 'virtual_machine_interface_refs'
+                },
         }
         return schema_dict
 
