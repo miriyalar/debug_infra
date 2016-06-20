@@ -9,7 +9,6 @@ from contrailnode_api import ControlNode, ConfigNode, Vrouter, AnalyticsNode
 from keystone_auth import ContrailKeystoneAuth
 from abc import ABCMeta, abstractmethod
 import ConfigParser
-import argparse
 import sys
 import os
 
@@ -302,62 +301,6 @@ class baseVertex(object):
 
     def _add_config_to_context(self, uuid, config):
         self.context['visited_vertexes'][uuid]['config'].update(config)
-
-
-def read_config_option(config, section, option, default_option):
-    ''' Read the config file. If the option/section is not present, return the default_option
-    '''
-    try:
-        val = config.get(section, option)
-        if val.lower() == 'true':
-            val = True
-        elif val.lower() == 'false' or val.lower() == 'none':
-            val = False
-        elif not val:
-            val = default_option
-        return val
-    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
-        return default_option
-
-def parse_args(args, custom_parse_kv=None):
-    parser = argparse.ArgumentParser(add_help=True)
-    parser.add_argument("-c", "--config", help="Specify conf file", metavar="FILE", default='debug.ini')
-    parser.add_argument("-v", "--verbose", help="Enable verbose output", action="store_true")
-    parser.add_argument("-d", "--discard", help="Disable dump of json output to file", action="store_true")
-    parser.add_argument("-V", "--verify", help="Verify objects", action="store_true")
-    parser.add_argument("--username", help="stack username")
-    parser.add_argument("--password", help="stack password")
-    parser.add_argument("--tenant", help="stack tenant")
-    parser.add_argument("--fqname", help="fqname of the object")
-    parser.add_argument("--uuid", help="uuid of the object")
-    parser.add_argument("--obj-type", help="type of the object")
-    if custom_parse_kv:
-        for k,v in custom_parse_kv.iteritems():
-            parser.add_argument(k, help=v)
-    pargs, remaining_argv = parser.parse_known_args(args)
-    pargs = dict(pargs._get_kwargs())
-    if os.path.exists(pargs['config']):
-        config = ConfigParser.SafeConfigParser()
-        config.read(pargs['config'])
-        pargs['auth_ip'] = read_config_option(config, 'auth',
-                           'AUTHN_SERVER', '127.0.0.1')
-        pargs['auth_port'] = read_config_option(config, 'auth',
-                           'AUTHN_PORT', '35357')
-        pargs['auth_url_path'] = read_config_option(config, 'auth',
-                           'AUTHN_URL', '/v2.0/tokens')
-        pargs['username'] = pargs['username'] or read_config_option(
-                           config, 'auth', 'AUTHN_USER', 'admin')
-        pargs['password'] = pargs['password'] or read_config_option(
-                           config, 'auth', 'AUTHN_PASSWORD', 'contrail123')
-        pargs['tenant'] = pargs['tenant'] or read_config_option(
-                           config, 'auth', 'AUTHN_TENANT_NAME', 'admin')
-        pargs['config_ip'] = read_config_option(config, 'contrail',
-                            'CONFIG_IP', '127.0.0.1')
-        pargs['config_port'] = read_config_option(config, 'contrail',
-                            'CONFIG_PORT', '8082')
-    else:
-        raise Exception('Unable to read the ini file %s'%pargs['config'])
-    return pargs, remaining_argv
 
 if __name__ == '__main__':
     pass

@@ -8,7 +8,8 @@ from introspect import AgentIntrospectCfg
 from contrail_utils import ContrailUtils
 from collections import OrderedDict
 from vertex_print import vertexPrint
-from basevertex import baseVertex, parse_args
+from basevertex import baseVertex
+from parser import ArgumentParser
 
 class debugVertexSG(baseVertex):
     dependant_vertexes = ['debugVertexVMI']
@@ -34,7 +35,7 @@ class debugVertexSG(baseVertex):
             oper[vertex_type] = sg_rec
         else:
             error = True
-            
+
         egress_acl_uuid = sg_rec['egress_acl_uuid']
         ingress_acl_uuid = sg_rec['ingress_acl_uuid']
         search_str = 'Snh_AclReq?x=%s' % (egress_acl_uuid)
@@ -57,7 +58,7 @@ class debugVertexSG(baseVertex):
         #import pdb; pdb.set_trace()
         print pstr
         return oper
-            
+
     def get_schema(self):
         schema_dict = {
                 "virtual-machine": {
@@ -69,8 +70,12 @@ class debugVertexSG(baseVertex):
         }
         return schema_dict
 
+def parse_args(args):
+    parser = ArgumentParser(description='Debug utility for SG', add_help=True)
+    return parser.parse_args(args)
+
 if __name__ == '__main__':
-    args, dummy = parse_args(sys.argv[1:])
+    args = parse_args(sys.argv[1:])
     vSG= debugVertexSG(**args)
     context = vSG.get_context()
     #vertexPrint(context, detail=args.detail)

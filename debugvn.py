@@ -1,5 +1,4 @@
 import sys
-import argparse
 from logger import logger
 from contrail_api import ContrailApi
 from introspect import Introspect
@@ -7,7 +6,8 @@ from introspect import AgentIntrospectCfg
 from contrail_utils import ContrailUtils
 from collections import OrderedDict
 from vertex_print import vertexPrint
-from basevertex import baseVertex, parse_args
+from basevertex import baseVertex
+from parser import ArgumentParser
 
 class debugVertexVN(baseVertex):
     dependant_vertexes = ['debugVertexVMI']
@@ -19,7 +19,7 @@ class debugVertexVN(baseVertex):
         self._add_agent_to_context(uuid, agent)
         control = {}
         control['oper'] = {}
-        self._add_control_to_context(uuid, control)        
+        self._add_control_to_context(uuid, control)
 
     def _get_agent_oper_db(self, host_ip, agent_port, vertex_type, vertex):
         error = False
@@ -40,7 +40,7 @@ class debugVertexVN(baseVertex):
         self.logger.debug(pstr)
         print pstr
         return oper
-                
+
     def get_schema(self, **kwargs):
         #VN Name, VN UUID, VMI UUID
         schema_dict = {
@@ -53,9 +53,12 @@ class debugVertexVN(baseVertex):
         }
         return schema_dict
 
+def parse_args(args):
+    parser = ArgumentParser(description='Debug utility for VN', add_help=True)
+    return parser.parse_args(args)
 
 if __name__ == '__main__':
-    args, dummy = parse_args(sys.argv[1:])
+    args = parse_args(sys.argv[1:])
     vVN= debugVertexVN(**args)
     context = vVN.get_context()
     #vertexPrint(context, detail=args.detail)

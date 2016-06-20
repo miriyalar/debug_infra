@@ -7,7 +7,8 @@ from introspect import AgentIntrospectCfg
 from contrail_utils import ContrailUtils
 from collections import OrderedDict
 from vertex_print import vertexPrint
-from basevertex import baseVertex, parse_args
+from basevertex import baseVertex
+from parser import ArgumentParser
 
 class debugVertexVMI(baseVertex):
     dependant_vertexes = ['debugVertexVM', 'debugVertexVN', 'debugVertexSG']
@@ -96,8 +97,12 @@ class debugVertexVMI(baseVertex):
         oper['interface'] = url_dict_resp
         return oper
 
+def parse_args(args):
+    parser = ArgumentParser(description='Debug utility for VMI', add_help=True)
+    return parser.parse_args(args)
+
 if __name__ == '__main__':
-    args, dummy = parse_args(sys.argv[1:])
+    args = parse_args(sys.argv[1:])
     vVMI= debugVertexVMI(**args)
     context = vVMI.get_context()
     #vertexPrint(context, detail=args.detail)
