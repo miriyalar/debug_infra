@@ -7,7 +7,7 @@ from introspect import AgentIntrospectCfg
 from contrail_utils import ContrailUtils
 from collections import OrderedDict
 from vertex_print import vertexPrint
-from basevertex import baseVertex
+from basevertex import baseVertex, parse_args
 
 class debugVertexFIP(baseVertex):
     dependant_vertexes = ['debugVertexVMI']
@@ -27,6 +27,9 @@ class debugVertexFIP(baseVertex):
         return schema_dict
 
     def process_self(self, vertex_type, uuid, vertex):
+        # Update flaotingip address if doesnt exist
+        if not self.floating_ip_address:
+            self.floating_ip_address = vertex['floating-ip']['floating_ip_address']
         # Agent
         agent = {}
         agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex_type, vertex)
@@ -57,7 +60,7 @@ class debugVertexFIP(baseVertex):
         url_dict_resp = Introspect(url=base_url + intf_str + search_str).get()
         intf_rec = url_dict_resp['ItfResp']['itf_list'][0]
         oper['interface'] = intf_rec        
-        
+
         match = False
         fip_list = intf_rec['fip_list']
         for fip in fip_list:
@@ -104,35 +107,10 @@ class debugVertexFIP(baseVertex):
         return oper
 
 
-def parse_args(args):
-    defaults = {
-        'config_ip': '127.0.0.1',
-        'config_port': '8082',
-        'detail': False,        
-    }
-    parser = argparse.ArgumentParser(description='Debug utility for FIP',
-                                     add_help=True)
-    parser.set_defaults(**defaults)
-    parser.add_argument('-cip', '--config_ip',
-                        help='Config node ip address')
-    parser.add_argument('-cport', '--config_port',
-                        help='Config node REST API port')
-    parser.add_argument('-fip', '--floating_ip_address',
-                        help='Floating ip address to debug')
-    parser.add_argument('--detail',
-                        help='Context detail output to console')
-    cliargs = parser.parse_args(args)
-    if len(args) == 0:
-        parser.print_help()
-        sys.exit(2)
-    return cliargs
-
 if __name__ == '__main__':
-    args = parse_args(sys.argv[1:])
-    vFIP= debugVertexFIP(config_ip=args.config_ip,
-                         config_port=args.config_port,
-                         floating_ip_address=args.floating_ip_address)
-
+    custom_parse_kv = {'--floating_ip_address': 'Floating ip address to debug'}
+    args, dummy = parse_args(sys.argv[1:], custom_parse_kv=custom_parse_kv)
+    vFIP= debugVertexFIP(**args)
     context = vFIP.get_context()
     #vertexPrint(context, detail=args.detail)
     vP = vertexPrint(context)
@@ -142,4 +120,3 @@ if __name__ == '__main__':
     #vP.print_object_catalogue(context, False)
     #vP.print_visited_vertexes_inorder(context)
     vP.convert_json(context)
-

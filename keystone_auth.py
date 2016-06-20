@@ -1,59 +1,29 @@
 #!/bin/python
 import pdb
 import logging
-import pprint
 import json
 import re
 import logging.handlers
-from urlparse import urlparse
 import ConfigParser
 import os.path
+from contrail_api_con import ContrailApiConnection
 
 class ContrailKeystoneAuth:
-    log = None
-    _keystone_con = None
-    _authn_server = '127.0.0.1'
-    _authn_port = '35357'
-    _authn_url = 'v2.0/tokens'
-    _authn_user = 'admin'
-    _authn_password = 'contrail123'
-    _authn_tenant_name = 'admin'
-    _authn_config_file = 'auth.ini'
+    def __init__(self, auth_ip, auth_port, auth_url_path, admin_username, admin_password, admin_tenant_name):
+        self._authn_server = auth_ip
+        self._authn_port = auth_port
+        self._authn_url = auth_url_path
+        self._authn_user = admin_username
+        self._authn_password = admin_password
+        self._authn_tenant_name = admin_tenant_name
+#        log = logging.getLogger("AUTH")
+#        self.log = log
+#        log.setLevel('DEBUG')
+#        logformat = logging.Formatter("%(levelname)s: %(message)s")
 
-    def __init__(self, **kwargs):
-        self._authn_config_file = kwargs.get('auth_config_file', self._authn_config_file)
-        if os.path.exists(self._authn_config_file):
-            config = ConfigParser.SafeConfigParser()
-            config.read([self._authn_config_file])
-            auth_config = dict(config.items("auth"))
-        else:
-            auth_config = dict()
-        self._authn_server = auth_config.get('authn_server', self._authn_server)
-        self._authn_port = auth_config.get('authn_port', self._authn_port)
-        self._authn_url = auth_config.get('authn_url', self._authn_url)
-        self._authn_user = auth_config.get('authn_user', self._authn_user)
-        self._authn_password = auth_config.get('authn_password', self._authn_password)
-        self._authn_tenant_name = auth_config.get('authn_tenant_name', self._authn_tenant_name)
-
-        '''
-        self._authn_server = kwargs.get('authn_server', self._authn_server)
-        self._authn_port = kwargs.get('authn_port', self._authn_port)
-        self._authn_user = kwargs.get('authn_user', self._authn_user)
-        self._authn_password = kwargs.get('authn_password', self._authn_password)
-        self._authn_tenant_name = kwargs.get('authn_tenant_name', self._authn_tenant_name)
-        self._authn_url = kwargs.get('authn_port', self._authn_url)
-        '''
-
-        log = self.log
-        log =  logging.getLogger("AUTH")
-        self.log = log
-        log.setLevel('DEBUG')
-        logformat = logging.Formatter("%(levelname)s: %(message)s")
-
-        stdout = logging.StreamHandler()
-        stdout.setLevel('DEBUG')
-        log.addHandler(stdout)
-        from contrail_api_con import ContrailApiConnection
+#        stdout = logging.StreamHandler()
+#        stdout.setLevel('DEBUG')
+#        log.addHandler(stdout)
         self._keystone_con = ContrailApiConnection()
 
     def authenticate(self, headers = []):
@@ -70,5 +40,3 @@ class ContrailKeystoneAuth:
 if __name__ == "__main__":
     import pdb; pdb.set_trace()
     auth = ContrailKeystoneAuth()
-
-

@@ -5,7 +5,7 @@ from utils import Utils
 class vertexPrint(object):
     context = None
     def __init__(self, context, **kwargs):
-        detail = kwargs.get('detail', False)
+        detail = kwargs.get('verbose', False)
         self.context = context
         #self._visited_vertexes(context, detail=True)
         #self._visited_vertexes_brief(context)

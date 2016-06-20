@@ -7,10 +7,10 @@ import re
 import logging.handlers
 from urlparse import urlparse
 from contrail_api_con import ContrailApiConnection
-from keystone_auth import ContrailKeystoneAuth
 from contrail_api_con_exception import ContrailApiConnectionException
 from contrail_con_enum import ContrailConError
 import datetime
+
 class ContrailApi:
     _api_con = None
 
@@ -19,7 +19,7 @@ class ContrailApi:
         "virtual_machine_interface_refs": "virtual-machine-interface"
     }
 
-    def __init__(self, ip = "127.0.0.1", port = "8082", username = None, password = None):
+    def __init__(self, ip = "127.0.0.1", port = "8082", token=None):
         #get logger object
         log =  logging.getLogger("debug")
         self.log = log
@@ -32,36 +32,10 @@ class ContrailApi:
 
         self._ip = ip
         self._port = port
-
-        #TODO handle auth excpetion
-        try:
-            self._api_con = ContrailApiConnection(ip=ip, port=port,
-                                     username = username, password = password)
-        except ContrailApiConnectionException as e:
-            #print 'authentication required'
-            #print datetime.datetime.utcnow()
-            #import pdb; pdb.set_trace()
-            if (e.ret_code == ContrailConError.AUTH_FAILURE):
-                keystone_obj = ContrailKeystoneAuth()
-                resp = keystone_obj.authenticate()
-                token = resp['access']['token']['id']
-                token_header = 'X-AUTH-TOKEN:%s' % (token)
-                self._token_header = token_header
-                self._headers = [token_header]
-                self._api_con = ContrailApiConnection(ip=ip, port=port,
-                         username = username, password = password, headers = [token_header])
-
-            #print datetime.datetime.utcnow()
-        except Exception as e:
-            raise e
-            
-
-               
-	#Create keystone auth object
-	#retrieve the token
-	#Call the ContrailAPIConection with token
-
-    #def _get_keystone_token():
+        if token:
+            token_header = 'X-AUTH-TOKEN:%s' % (token)
+        self._api_con = ContrailApiConnection(ip=ip, port=port,
+                        headers = [token_header] if token else [])
 
     def get_ip(self):
         return self._ip
@@ -411,100 +385,6 @@ class ContrailApi:
 
  
 #end of ContrailApi
-
-
-def wrapper_debug_floating_ip(fip = '7.7.7.3'):
-
-    #Define object you want and relations
-    lookup_hash = {"floating-ip":
-                                {
-                                    "where": 'floating_ip_address=="7.7.7.3"',
-                                    "select": ["parent_href", "virtual_machine_interface_refs"]
-                                }
-                    }
-    where_criteria = ("uuid=%s") % (ret_obj_lst[0][0]['parent_uuid'])
-
-    lookup_hash1 = {"virtual-network":
-                                {   
-                                    "where": where_criteria,
-                                    "select": []
-                                }
-                    }
-    #Using the ret_object
-    #Build the data that is of interest to you
-
-
-
-
-
-#TODO return the name as welll    
-def debug_new_floating_ip(fip= '7.7.7.3'):
-
-
-
-
-    in_out_lst = []
-    config_api = ContrailApi(ip='127.0.0.1', port="8082")
-    '''
-    object_path_list = ['floating-ip', 'virtual_machine_interface_refs', 'virtual_machine_refs']
-    ret_obj_lst_tst = config_api.get_object_deep(object_path_list, where = 'floating_ip_address=="7.7.7.3"',
-                     detail = True,
-                     de_ref = True, strip_obj_name = False)
-    '''
-
-
-    #Example to get select multiple objects based on the path_list
-    #
-    object_path_list = ['virtual_machine_interface_back_refs.virtual_machine_refs',
-                         'virtual_machine_interface_back_refs.virtual_machine_interface_mac_addresses'
-                        ]
-
-
-    ret_obj_lst_tst1 = config_api.get_object_deep_multiple_select('virtual-network', object_path_list, where = 'display_name==testvn')
-
-    pdb.set_trace()
-    #Test code
-    ret_list = config_api.get_object_with_filters('virtual-network', "")
-    ret_list_1 = config_api.get_object_with_filters('virtual-network', 'display_name==testvn')
-    pdb.set_trace()
-
-    object_path_list_str = 'virtual_machine_interface_back_refs.virtual_machine_refs'
-
-    ret_obj_lst_tst1 = config_api.get_object_deep('virtual-network', object_path_list_str, where = 'display_name==testvn',
-                     detail = True,
-                     de_ref = True, strip_obj_name = False)
-
-    pdb.set_trace()
-    ret_obj_lst = config_api.get_object_multiple_select("floating-ip", where = 'floating_ip_address==7.7.7.3',
-                     detail = True,
-                     select_list = 'parent_href,virtual_machine_interface_refs',
-                     de_ref = True, strip_obj_name = False)
-
-    pdb.set_trace()
-    #Get the virtual-network-object
-    virtual_network_href = ret_obj_lst[0][0]['floating-ip-pool']['parent_href']
-    virtual_network_obj = config_api.get_object(object_name = '', url=virtual_network_href)
-
-    ret_obj_lst.append([virtual_network_obj])
-
-    #Get the secuity groups
-    vmi_obj = ret_obj_lst[1][0] ['virtual-machine-interface']
-    sg_refs = vmi_obj['security_group_refs']
-    sg_obj_list = []
-    for sg_ref in sg_refs:
-        sg_obj = config_api.de_ref_obj(refs = sg_ref)
-        sg_obj_list.append(sg_obj)
-
-    ret_obj_lst.append(sg_obj_list)
-
-
-    translation_list = config_api.translate_config_obj(ret_obj_lst)
-
-    config_api.verify_obj(ret_obj_lst[0][0], [], in_out_lst)
-    config_api.verify_obj(ret_obj_lst[1][0], ['virtual_machine_refs'], in_out_lst)
-
-    return 0
-
 
 
 if __name__ == "__main__":

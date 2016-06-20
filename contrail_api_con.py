@@ -101,6 +101,7 @@ class ContrailApiConnection:
         self._hdr = headers
         _con.setopt(pycurl.HTTPHEADER, headers)
         self._set_auth(_con)
+        print url
         try:
             _con.perform()
         except pycurl.error as e:
@@ -113,7 +114,7 @@ class ContrailApiConnection:
 	elif resp_code == 401:
            #TODO Raise an exception		
            #auth to keystone server
-           raise ContrailApiConnectionException("Authentication Requires",
+           raise ContrailApiConnectionException("Authentication Required",
 						 ContrailConError.AUTH_FAILURE)		
 
 
@@ -172,6 +173,7 @@ class ContrailApiConnection:
         # Set our header function.
 #        _con.setopt(_con.HEADERFUNCTION, self.header_function)
 
+        print url
         try:
             _con.perform()
         except pycurl.error as e:
@@ -182,7 +184,7 @@ class ContrailApiConnection:
             resp = self.get_encoded_response(self.headers, self.resp_buffer) 
 	elif resp_code == 401:
             #auth to keystone server
-            raise ContrailApiConnectionException("Authentication Requires",
+            raise ContrailApiConnectionException("Authentication Required",
 						 ContrailConError.AUTH_FAILURE)
         else:
             pstr = "http resp code:%s, http headers:%s, http resp buffer:%s" % \
@@ -222,6 +224,7 @@ class ContrailApiConnection:
         self.resp_buffer = BytesIO()
         _con.setopt(_con.WRITEFUNCTION, self.resp_buffer.write)
         #_con.setopt(pycurl.VERBOSE, 1)
+        print url
         try:
             _con.perform()
         except pycurl.error as e:

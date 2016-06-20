@@ -1,30 +1,44 @@
-import logging
 import pdb
-from pprint import pprint
 from logger import logger
-from contrail_api import ContrailApi
 from introspect import Introspect
 from contrail_utils import ContrailUtils
 from utils import Utils
-from collections import OrderedDict, defaultdict
 from vertex_print import vertexPrint
+from collections import OrderedDict, defaultdict
 from contrailnode_api import ControlNode, ConfigNode, Vrouter, AnalyticsNode
+from keystone_auth import ContrailKeystoneAuth
 from abc import ABCMeta, abstractmethod
+import ConfigParser
+import argparse
+import sys
+import os
 
-def create_global_context():
+def get_keystone_auth_token(**kwargs):
+    token = None
+    keystone_obj = ContrailKeystoneAuth(auth_ip=kwargs.get('auth_ip'),
+                                        auth_port=kwargs.get('auth_port'),
+                                        auth_url_path=kwargs.get('auth_url_path'),
+                                        admin_username=kwargs.get('username'),
+                                        admin_password=kwargs.get('password'),
+                                        admin_tenant_name=kwargs.get('tenant'))
+    resp = keystone_obj.authenticate()
+    if resp.has_key('access'):
+        return resp['access']['token']['id']
+    return token
+
+def create_global_context(**kwargs):
     gcontext = {}
     gcontext['path'] = []
     gcontext['visited_vertexes'] = {}
     gcontext['vertexes'] = defaultdict(list)
-    #gcontext['visited_nodes'] = OrderedDict()
     gcontext['visited_nodes'] = {}
     gcontext['visited_vertexes_inorder'] = []
     gcontext['config_api'] = None
-    gcontext['config_ip'] = '127.0.0.1'
-    gcontext['config_port'] = '8082'
+    gcontext['config_ip'] = kwargs.get('config_ip')
+    gcontext['config_port'] = kwargs.get('config_port')
     gcontext['contrail'] = {}
+    gcontext['token'] = get_keystone_auth_token(**kwargs)
     return gcontext
-
 
 class baseVertex(object):
     '''Abstract Base Class for Vertex'''
@@ -36,7 +50,7 @@ class baseVertex(object):
         self.vrouter = None
         self.config_objs = {}
         if not context:
-            self.context = create_global_context()
+            self.context = create_global_context(**kwargs)
         else:
             self.context = context
         if self._is_vertex_type_exists_in_path(self.vertex_type):
@@ -49,11 +63,17 @@ class baseVertex(object):
         self.config_port = kwargs.get('config_port', self.context.get('config_port'))
         self.obj_type = kwargs.get('obj_type', None) or self.vertex_type
         self.logger = logger(logger_name=self.get_class_name()).get_logger()
+        self.token = self.context['token']
+        if not self.token:
+            self.logger.warn('Authentication failed: Unable to fetch token from keystone')
         self._set_contrail_control_objs(self.context)
         self.schema = self.get_schema()
-        if not hasattr(self, 'match_kv'):
-             self.match_kv = {'uuid': self.uuid, 'fq_name': self.fq_name,
-                              'display_name': self.display_name}
+        if not self.element:
+            if not hasattr(self, 'match_kv') or not any(self.match_kv.itervalues()):
+                self.match_kv = {'uuid': self.uuid, 'fq_name': self.fq_name,
+                                 'display_name': self.display_name}
+            if not any(self.match_kv.itervalues()):
+                raise Exception('Nothing to match, please check match args')
         self.process_vertexes(self._locate_obj())
 
     @abstractmethod
@@ -69,18 +89,19 @@ class baseVertex(object):
         self.control = context['contrail'].get('control', None)
         self.analytics = context['contrail'].get('analytics', None)
         if not self.config:
-            contrail_control = ContrailUtils.get_control_nodes(self.config_ip, self.config_port)
-            self.context['contrail']['config'] = self.config = ConfigNode(contrail_control['config_nodes'])
+            contrail_control = ContrailUtils(token=self.token).get_control_nodes(self.config_ip, self.config_port)
+            self.context['contrail']['config'] = self.config = ConfigNode(contrail_control['config_nodes'], token=self.token)
             self.context['contrail']['control'] = self.control = ControlNode(contrail_control['control_nodes'])
             self.context['contrail']['analytics'] = self.analytics = AnalyticsNode(contrail_control['analytics_nodes'])
             self.context['config_ip'] = self.config_ip
             self.context['config_port'] = self.config_port
 
     def _set_contrail_vrouter_objs(self, vertex_type, obj):
-        contrail_info = ContrailUtils.get_contrail_info(obj[vertex_type]['uuid'],
+        contrail_info = ContrailUtils(token=self.token).get_contrail_info(
+                                                        obj[vertex_type]['uuid'],
                                                         vertex_type,
-                                                        self.config_ip,
-                                                        self.config_port,
+                                                        config_ip=self.config_ip,
+                                                        config_port=self.config_port,
                                                         context_path=self.context['path'],
                                                         fq_name=obj[vertex_type]['fq_name'])
         self.vrouter = Vrouter(contrail_info['vrouter'])
@@ -283,7 +304,60 @@ class baseVertex(object):
         self.context['visited_vertexes'][uuid]['config'].update(config)
 
 
+def read_config_option(config, section, option, default_option):
+    ''' Read the config file. If the option/section is not present, return the default_option
+    '''
+    try:
+        val = config.get(section, option)
+        if val.lower() == 'true':
+            val = True
+        elif val.lower() == 'false' or val.lower() == 'none':
+            val = False
+        elif not val:
+            val = default_option
+        return val
+    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+        return default_option
+
+def parse_args(args, custom_parse_kv=None):
+    parser = argparse.ArgumentParser(add_help=True)
+    parser.add_argument("-c", "--config", help="Specify conf file", metavar="FILE", default='debug.ini')
+    parser.add_argument("-v", "--verbose", help="Enable verbose output", action="store_true")
+    parser.add_argument("-d", "--discard", help="Disable dump of json output to file", action="store_true")
+    parser.add_argument("-V", "--verify", help="Verify objects", action="store_true")
+    parser.add_argument("--username", help="stack username")
+    parser.add_argument("--password", help="stack password")
+    parser.add_argument("--tenant", help="stack tenant")
+    parser.add_argument("--fqname", help="fqname of the object")
+    parser.add_argument("--uuid", help="uuid of the object")
+    parser.add_argument("--obj-type", help="type of the object")
+    if custom_parse_kv:
+        for k,v in custom_parse_kv.iteritems():
+            parser.add_argument(k, help=v)
+    pargs, remaining_argv = parser.parse_known_args(args)
+    pargs = dict(pargs._get_kwargs())
+    if os.path.exists(pargs['config']):
+        config = ConfigParser.SafeConfigParser()
+        config.read(pargs['config'])
+        pargs['auth_ip'] = read_config_option(config, 'auth',
+                           'AUTHN_SERVER', '127.0.0.1')
+        pargs['auth_port'] = read_config_option(config, 'auth',
+                           'AUTHN_PORT', '35357')
+        pargs['auth_url_path'] = read_config_option(config, 'auth',
+                           'AUTHN_URL', '/v2.0/tokens')
+        pargs['username'] = pargs['username'] or read_config_option(
+                           config, 'auth', 'AUTHN_USER', 'admin')
+        pargs['password'] = pargs['password'] or read_config_option(
+                           config, 'auth', 'AUTHN_PASSWORD', 'contrail123')
+        pargs['tenant'] = pargs['tenant'] or read_config_option(
+                           config, 'auth', 'AUTHN_TENANT_NAME', 'admin')
+        pargs['config_ip'] = read_config_option(config, 'contrail',
+                            'CONFIG_IP', '127.0.0.1')
+        pargs['config_port'] = read_config_option(config, 'contrail',
+                            'CONFIG_PORT', '8082')
+    else:
+        raise Exception('Unable to read the ini file %s'%pargs['config'])
+    return pargs, remaining_argv
+
 if __name__ == '__main__':
     pass
-
-
