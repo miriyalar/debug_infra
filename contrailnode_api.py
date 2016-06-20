@@ -21,8 +21,9 @@ class AnalyticsNode:
         return self._analytics_api.get_object(object_name, object_type, select_fields)
 
 class ConfigNode:
-    def __init__(self, config_nodes):
+    def __init__(self, config_nodes, token=None):
         self.config_nodes = config_nodes
+        self.token = token
         self.config_api = []
         self.update_config_nodes(config_nodes)
 
@@ -33,9 +34,7 @@ class ConfigNode:
                 capi['ip_address'] = node['ip_address']
                 capi['port'] = node['port']
                 capi['hostname'] = node['hostname']
-                capi['obj'] = ContrailApi(ip=capi['ip_address'], port=capi['port'])
-                # The following is used, if ip=127.0.0.1 and port=8095, otherwise 8082 will ignore these fields.
-                # capi['obj'] = ContrailApi(ip=capi['ip_address'], port=capi['port'], username='admin', password='contrail123')
+                capi['obj'] = ContrailApi(ip=capi['ip_address'], port=capi['port'], token=self.token)
                 self.config_api.append(capi)
 
     def get_object(self, object_type, config_ip=None, config_port=None, 

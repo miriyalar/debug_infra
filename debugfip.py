@@ -8,13 +8,14 @@ from contrail_utils import ContrailUtils
 from collections import OrderedDict
 from vertex_print import vertexPrint
 from basevertex import baseVertex
+from parser import ArgumentParser
 
 class debugVertexFIP(baseVertex):
     dependant_vertexes = ['debugVertexVMI']
     vertex_type = 'floating-ip'
 
     def __init__(self, context=None, **kwargs):
-        self.floating_ip_address = kwargs['floating_ip_address']
+        self.floating_ip_address = kwargs.get('floating_ip_address', None)
         self.match_kv = {'floating_ip_address': self.floating_ip_address}
         super(debugVertexFIP, self).__init__(context=context, **kwargs)
 
@@ -27,6 +28,9 @@ class debugVertexFIP(baseVertex):
         return schema_dict
 
     def process_self(self, vertex_type, uuid, vertex):
+        # Update flaotingip address if doesnt exist
+        if not self.floating_ip_address:
+            self.floating_ip_address = vertex['floating-ip']['floating_ip_address']
         # Agent
         agent = {}
         agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex_type, vertex)
@@ -56,8 +60,8 @@ class debugVertexFIP(baseVertex):
         search_str = ('name=&type=&uuid=%s') % (vmi_uuid)
         url_dict_resp = Introspect(url=base_url + intf_str + search_str).get()
         intf_rec = url_dict_resp['ItfResp']['itf_list'][0]
-        oper['interface'] = intf_rec        
-        
+        oper['interface'] = intf_rec
+
         match = False
         fip_list = intf_rec['fip_list']
         for fip in fip_list:
@@ -77,7 +81,7 @@ class debugVertexFIP(baseVertex):
             print pstr
             return oper
 
-        # Get vrf from 
+        # Get vrf from
         vrf_str = 'Snh_VrfListReq?'
         search_str = ('x=%s') % (fip_vrf)
         ivrfobj = Introspect(url= base_url + vrf_str + search_str)
@@ -103,36 +107,14 @@ class debugVertexFIP(baseVertex):
             print "Agent Error doesn't have route for %s" % (fip_address)
         return oper
 
-
 def parse_args(args):
-    defaults = {
-        'config_ip': '127.0.0.1',
-        'config_port': '8082',
-        'detail': False,        
-    }
-    parser = argparse.ArgumentParser(description='Debug utility for FIP',
-                                     add_help=True)
-    parser.set_defaults(**defaults)
-    parser.add_argument('-cip', '--config_ip',
-                        help='Config node ip address')
-    parser.add_argument('-cport', '--config_port',
-                        help='Config node REST API port')
-    parser.add_argument('-fip', '--floating_ip_address',
-                        help='Floating ip address to debug')
-    parser.add_argument('--detail',
-                        help='Context detail output to console')
-    cliargs = parser.parse_args(args)
-    if len(args) == 0:
-        parser.print_help()
-        sys.exit(2)
-    return cliargs
+    parser = ArgumentParser(description='Debug utility for FIP', add_help=True)
+    parser.add_argument('--floating_ip_address', help='Floating ip address to debug')
+    return parser.parse_args(args)
 
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
-    vFIP= debugVertexFIP(config_ip=args.config_ip,
-                         config_port=args.config_port,
-                         floating_ip_address=args.floating_ip_address)
-
+    vFIP= debugVertexFIP(**args)
     context = vFIP.get_context()
     #vertexPrint(context, detail=args.detail)
     vP = vertexPrint(context)
@@ -142,4 +124,3 @@ if __name__ == '__main__':
     #vP.print_object_catalogue(context, False)
     #vP.print_visited_vertexes_inorder(context)
     vP.convert_json(context)
-

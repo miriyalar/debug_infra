@@ -1,5 +1,4 @@
 import sys
-import argparse
 from logger import logger
 from contrail_api import ContrailApi
 from introspect import Introspect
@@ -8,6 +7,7 @@ from contrail_utils import ContrailUtils
 from collections import OrderedDict
 from vertex_print import vertexPrint
 from basevertex import baseVertex
+from parser import ArgumentParser
 
 class debugVertexVN(baseVertex):
     dependant_vertexes = ['debugVertexVMI']
@@ -19,7 +19,7 @@ class debugVertexVN(baseVertex):
         self._add_agent_to_context(uuid, agent)
         control = {}
         control['oper'] = {}
-        self._add_control_to_context(uuid, control)        
+        self._add_control_to_context(uuid, control)
 
     def _get_agent_oper_db(self, host_ip, agent_port, vertex_type, vertex):
         error = False
@@ -40,7 +40,7 @@ class debugVertexVN(baseVertex):
         self.logger.debug(pstr)
         print pstr
         return oper
-                
+
     def get_schema(self, **kwargs):
         #VN Name, VN UUID, VMI UUID
         schema_dict = {
@@ -53,43 +53,13 @@ class debugVertexVN(baseVertex):
         }
         return schema_dict
 
-
 def parse_args(args):
-    defaults = {
-        'config_ip': '127.0.0.1',
-        'config_port': '8082',
-        'detail': False,        
-    }
-    parser = argparse.ArgumentParser(description='Debug utility for VN',
-                                     add_help=True)
-    parser.set_defaults(**defaults)
-    parser.add_argument('-cip', '--config_ip',
-                        help='Config node ip address')
-    parser.add_argument('-cport', '--config_port',
-                        help='Config node REST API port')
-    parser.add_argument('-obj', '--obj_type',
-                        help='Object type to search')
-    parser.add_argument('-uuid', '--uuid',
-                        help='uuid')
-    parser.add_argument('-dname', '--display_name',
-                        help='Display name of the object')
-    parser.add_argument('-fqn', '--fq_name',
-                        help='Display name of the object')
-    parser.add_argument('--detail',
-                        help='Context detail output to console')
-    cliargs = parser.parse_args(args)
-    if len(args) == 0:
-        parser.print_help()
-        sys.exit(2)
-    return cliargs
+    parser = ArgumentParser(description='Debug utility for VN', add_help=True)
+    return parser.parse_args(args)
 
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
-    vVN= debugVertexVN(config_ip=args.config_ip,
-                       config_port=args.config_port,
-                       uuid=args.uuid,
-                       obj_type=args.obj_type,
-                       display_name=args.display_name)
+    vVN= debugVertexVN(**args)
     context = vVN.get_context()
     #vertexPrint(context, detail=args.detail)
     vP = vertexPrint(context)
@@ -98,4 +68,3 @@ if __name__ == '__main__':
     vP.print_object_catalogue(context, False)
     #vP.print_visited_vertexes_inorder(context)
     vP.convert_json(context)
-

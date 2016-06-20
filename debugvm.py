@@ -8,6 +8,7 @@ from contrail_utils import ContrailUtils
 from collections import OrderedDict
 from vertex_print import vertexPrint
 from basevertex import baseVertex
+from parser import ArgumentParser
 
 class debugVertexVM(baseVertex):
     dependant_vertexes = ['debugVertexVMI']
@@ -50,41 +51,13 @@ class debugVertexVM(baseVertex):
             print pstr
         return oper
 
-
 def parse_args(args):
-    defaults = {
-        'config_ip': '127.0.0.1',
-        'config_port': '8082',
-        'detail': False,        
-    }
-    parser = argparse.ArgumentParser(description='Debug utility for VM',
-                                     add_help=True)
-    parser.set_defaults(**defaults)
-    parser.add_argument('-cip', '--config_ip',
-                        help='Config node ip address')
-    parser.add_argument('-cport', '--config_port',
-                        help='Config node REST API port')
-    parser.add_argument('-obj', '--obj_type',
-                        help='Object type to search')
-    parser.add_argument('-uuid', '--uuid',
-                        help='uuid')
-    parser.add_argument('-dname', '--display_name',
-                        help='Display name of the object')
-    parser.add_argument('--detail',
-                        help='Context detail output to console')
-    cliargs = parser.parse_args(args)
-    if len(args) == 0:
-        parser.print_help()
-        sys.exit(2)
-    return cliargs
+    parser = ArgumentParser(description='Debug utility for VM', add_help=True)
+    return parser.parse_args(args)
 
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
-    vVM= debugVertexVM(config_ip=args.config_ip,
-                       config_port=args.config_port,
-                       uuid=args.uuid,
-                       obj_type=args.obj_type,
-                       display_name=args.display_name)
+    vVM= debugVertexVM(**args)
     context = vVM.get_context()
     #vertexPrint(context, detail=args.detail)
     vP = vertexPrint(context)

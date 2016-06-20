@@ -8,15 +8,14 @@ from contrail_utils import ContrailUtils
 from collections import OrderedDict
 from vertex_print import vertexPrint
 from basevertex import baseVertex
+from parser import ArgumentParser
 
 class debugVertexIP(baseVertex):
     dependant_vertexes = ['debugVertexVMI']
-    #dependant_vertexes = []
-
     vertex_type = 'instance-ip'
 
     def __init__(self, context=None, **kwargs):
-        self.instance_ip_address = kwargs['instance_ip_address']
+        self.instance_ip_address = kwargs.get('instance_ip_address', None)
         self.match_kv = {'instance_ip_address': self.instance_ip_address}
         super(debugVertexIP, self).__init__(context=context, **kwargs)
 
@@ -33,6 +32,8 @@ class debugVertexIP(baseVertex):
         return schema_dict
 
     def process_self(self, vertex_type, uuid, vertex):
+        if not self.instance_ip_address:
+            self.instance_ip_address = vertex['instance-ip']['instance_ip_address']
         # Agent
         agent = {}
         agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex_type, vertex)
@@ -63,8 +64,8 @@ class debugVertexIP(baseVertex):
         search_str = ('name=&type=&uuid=%s') % (vmi_uuid)
         url_dict_resp = Introspect(url=base_url + intf_str + search_str).get()
         intf_rec = url_dict_resp['ItfResp']['itf_list'][0]
-        oper['interface'] = intf_rec        
-        
+        oper['interface'] = intf_rec
+
         ip_address = oper['interface']['ip_addr']
         if ip_address == self.instance_ip_address:
             pstr = "IP address %s is found in the interface rec %s" % \
@@ -78,7 +79,7 @@ class debugVertexIP(baseVertex):
             print pstr
             return oper
 
-        # Get vrf from 
+        # Get vrf from
         vrf = intf_rec['vrf_name']
         vrf_str = 'Snh_VrfListReq?'
         search_str = ('x=%s') % (vrf)
@@ -105,35 +106,14 @@ class debugVertexIP(baseVertex):
             print "Agent Error doesn't have route for %s" % (ip_address)
         return oper
 
-
 def parse_args(args):
-    defaults = {
-        'config_ip': '127.0.0.1',
-        'config_port': '8082',
-        'detail': False,        
-    }
-    parser = argparse.ArgumentParser(description='Debug utility for InstanceIP',
-                                     add_help=True)
-    parser.set_defaults(**defaults)
-    parser.add_argument('-cip', '--config_ip',
-                        help='Config node ip address')
-    parser.add_argument('-cport', '--config_port',
-                        help='Config node REST API port')
-    parser.add_argument('-iip', '--instance_ip_address',
-                        help='Floating ip address to debug')
-    parser.add_argument('--detail',
-                        help='Context detail output to console')
-    cliargs = parser.parse_args(args)
-    if len(args) == 0:
-        parser.print_help()
-        sys.exit(2)
-    return cliargs
+    parser = ArgumentParser(description='Debug utility for IIP', add_help=True)
+    parser.add_argument('--instance_ip_address', help='Instance ip address to debug')
+    return parser.parse_args(args)
 
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
-    vIIP= debugVertexIP(config_ip=args.config_ip,
-                         config_port=args.config_port,
-                         instance_ip_address=args.instance_ip_address)
+    vIIP= debugVertexIP(**args)
 
     context = vIIP.get_context()
     #vertexPrint(context, detail=args.detail)

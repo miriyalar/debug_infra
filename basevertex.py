@@ -1,30 +1,43 @@
-import logging
 import pdb
-from pprint import pprint
 from logger import logger
-from contrail_api import ContrailApi
 from introspect import Introspect
 from contrail_utils import ContrailUtils
 from utils import Utils
-from collections import OrderedDict, defaultdict
 from vertex_print import vertexPrint
+from collections import OrderedDict, defaultdict
 from contrailnode_api import ControlNode, ConfigNode, Vrouter, AnalyticsNode
+from keystone_auth import ContrailKeystoneAuth
 from abc import ABCMeta, abstractmethod
+import ConfigParser
+import sys
+import os
 
-def create_global_context():
+def get_keystone_auth_token(**kwargs):
+    token = None
+    keystone_obj = ContrailKeystoneAuth(auth_ip=kwargs.get('auth_ip'),
+                                        auth_port=kwargs.get('auth_port'),
+                                        auth_url_path=kwargs.get('auth_url_path'),
+                                        admin_username=kwargs.get('username'),
+                                        admin_password=kwargs.get('password'),
+                                        admin_tenant_name=kwargs.get('tenant'))
+    resp = keystone_obj.authenticate()
+    if resp.has_key('access'):
+        return resp['access']['token']['id']
+    return token
+
+def create_global_context(**kwargs):
     gcontext = {}
     gcontext['path'] = []
     gcontext['visited_vertexes'] = {}
     gcontext['vertexes'] = defaultdict(list)
-    #gcontext['visited_nodes'] = OrderedDict()
     gcontext['visited_nodes'] = {}
     gcontext['visited_vertexes_inorder'] = []
     gcontext['config_api'] = None
-    gcontext['config_ip'] = '127.0.0.1'
-    gcontext['config_port'] = '8082'
+    gcontext['config_ip'] = kwargs.get('config_ip')
+    gcontext['config_port'] = kwargs.get('config_port')
     gcontext['contrail'] = {}
+    gcontext['token'] = get_keystone_auth_token(**kwargs)
     return gcontext
-
 
 class baseVertex(object):
     '''Abstract Base Class for Vertex'''
@@ -36,7 +49,7 @@ class baseVertex(object):
         self.vrouter = None
         self.config_objs = {}
         if not context:
-            self.context = create_global_context()
+            self.context = create_global_context(**kwargs)
         else:
             self.context = context
         if self._is_vertex_type_exists_in_path(self.vertex_type):
@@ -49,11 +62,17 @@ class baseVertex(object):
         self.config_port = kwargs.get('config_port', self.context.get('config_port'))
         self.obj_type = kwargs.get('obj_type', None) or self.vertex_type
         self.logger = logger(logger_name=self.get_class_name()).get_logger()
+        self.token = self.context['token']
+        if not self.token:
+            self.logger.warn('Authentication failed: Unable to fetch token from keystone')
         self._set_contrail_control_objs(self.context)
         self.schema = self.get_schema()
-        if not hasattr(self, 'match_kv'):
-             self.match_kv = {'uuid': self.uuid, 'fq_name': self.fq_name,
-                              'display_name': self.display_name}
+        if not self.element:
+            if not hasattr(self, 'match_kv') or not any(self.match_kv.itervalues()):
+                self.match_kv = {'uuid': self.uuid, 'fq_name': self.fq_name,
+                                 'display_name': self.display_name}
+            if not any(self.match_kv.itervalues()):
+                raise Exception('Nothing to match, please check match args')
         self.process_vertexes(self._locate_obj())
 
     @abstractmethod
@@ -69,18 +88,19 @@ class baseVertex(object):
         self.control = context['contrail'].get('control', None)
         self.analytics = context['contrail'].get('analytics', None)
         if not self.config:
-            contrail_control = ContrailUtils.get_control_nodes(self.config_ip, self.config_port)
-            self.context['contrail']['config'] = self.config = ConfigNode(contrail_control['config_nodes'])
+            contrail_control = ContrailUtils(token=self.token).get_control_nodes(self.config_ip, self.config_port)
+            self.context['contrail']['config'] = self.config = ConfigNode(contrail_control['config_nodes'], token=self.token)
             self.context['contrail']['control'] = self.control = ControlNode(contrail_control['control_nodes'])
             self.context['contrail']['analytics'] = self.analytics = AnalyticsNode(contrail_control['analytics_nodes'])
             self.context['config_ip'] = self.config_ip
             self.context['config_port'] = self.config_port
 
     def _set_contrail_vrouter_objs(self, vertex_type, obj):
-        contrail_info = ContrailUtils.get_contrail_info(obj[vertex_type]['uuid'],
+        contrail_info = ContrailUtils(token=self.token).get_contrail_info(
+                                                        obj[vertex_type]['uuid'],
                                                         vertex_type,
-                                                        self.config_ip,
-                                                        self.config_port,
+                                                        config_ip=self.config_ip,
+                                                        config_port=self.config_port,
                                                         context_path=self.context['path'],
                                                         fq_name=obj[vertex_type]['fq_name'])
         self.vrouter = Vrouter(contrail_info['vrouter'])
@@ -127,6 +147,8 @@ class baseVertex(object):
         from debugvn import debugVertexVN
         from debugvmi import debugVertexVMI
         from debugsg import debugVertexSG
+        from debugip import debugVertexIP
+        from debugfip import debugVertexFIP
         element = self._create_element(vertex_type=vertex_type,
                                        uuid=uuid,
                                        fq_name=fq_name)
@@ -282,8 +304,5 @@ class baseVertex(object):
     def _add_config_to_context(self, uuid, config):
         self.context['visited_vertexes'][uuid]['config'].update(config)
 
-
 if __name__ == '__main__':
     pass
-
-

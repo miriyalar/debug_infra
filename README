@@ -2,8 +2,8 @@ Check out:
 git clone https://github.com/miriyalar/debug_infra
 
 Authentication:
-Multi tenany setup needs to make sure the auth.ini configured properly
-Modify auth.ini to refect the server ip and port
+Multi tenany setup needs to make sure the debug.ini configured properly
+Modify debug.ini to reflect the keystone auth info and config api server info
 
 Usage:
 You can clone debug infra code to any server, where you got access to config node.
@@ -11,10 +11,10 @@ git clone https://github.com/miriyalar/debug_infra
 cd <debug_infra dir>
 
 Example:
-python debugvmi.py --config_ip 10.84.17.5 --config_port 8082  --uuid 060c2b5f-d43a-4ea5-844d-393819ff36fd
-python debugfip.py --config_ip 10.84.17.5 --config_port 8082 --floating_ip_addres 7.7.7.3
-python debugsg.py --config_ip 10.84.17.5 --config_port 8082 --display_name default
-python debugvn.py --config_ip 10.84.17.5 --config_port 8082 --display_name testvn
+python debugvmi.py --uuid 060c2b5f-d43a-4ea5-844d-393819ff36fd
+python debugfip.py --floating_ip_addres 7.7.7.3
+python debugsg.py --display_name default
+python debugvn.py --display_name testvn
 
 Output:
 Debugs are located at debug_nodes.log
@@ -22,5 +22,3 @@ context output is at debug_vertexes_output.json [Open using firefox, somehow chr
 
 
 Process of writing the code for new debugnode/debug vertex:
-
-
