@@ -15,7 +15,7 @@ class debugVertexFIP(baseVertex):
     vertex_type = 'floating-ip'
 
     def __init__(self, context=None, **kwargs):
-        self.floating_ip_address = kwargs['floating_ip_address']
+        self.floating_ip_address = kwargs.get('floating_ip_address', None)
         self.match_kv = {'floating_ip_address': self.floating_ip_address}
         super(debugVertexFIP, self).__init__(context=context, **kwargs)
 

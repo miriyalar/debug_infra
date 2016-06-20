@@ -147,6 +147,8 @@ class baseVertex(object):
         from debugvn import debugVertexVN
         from debugvmi import debugVertexVMI
         from debugsg import debugVertexSG
+        from debugip import debugVertexIP
+        from debugfip import debugVertexFIP
         element = self._create_element(vertex_type=vertex_type,
                                        uuid=uuid,
                                        fq_name=fq_name)

@@ -15,7 +15,7 @@ class debugVertexIP(baseVertex):
     vertex_type = 'instance-ip'
 
     def __init__(self, context=None, **kwargs):
-        self.instance_ip_address = kwargs['instance_ip_address']
+        self.instance_ip_address = kwargs.get('instance_ip_address', None)
         self.match_kv = {'instance_ip_address': self.instance_ip_address}
         super(debugVertexIP, self).__init__(context=context, **kwargs)
 

@@ -11,7 +11,7 @@ from basevertex import baseVertex
 from parser import ArgumentParser
 
 class debugVertexVMI(baseVertex):
-    dependant_vertexes = ['debugVertexVM', 'debugVertexVN', 'debugVertexSG']
+    dependant_vertexes = ['debugVertexVM', 'debugVertexVN', 'debugVertexSG', 'debugVertexIP']
     vertex_type = 'virtual-machine-interface'
 
     def process_self(self, vertex_type, uuid, vertex):
