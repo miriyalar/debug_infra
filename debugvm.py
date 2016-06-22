@@ -65,4 +65,6 @@ if __name__ == '__main__':
     vP.print_visited_nodes(context, detail=False)
     #vP.print_object_catalogue(context, True)
     vP.convert_json(context)
+    vP.convert_to_file_structure(context)
+
 

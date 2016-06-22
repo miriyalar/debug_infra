@@ -84,4 +84,5 @@ if __name__ == '__main__':
     #vP._visited_vertexes_brief(context)
     #vP.print_visited_nodes(context, detail=False)
     vP.print_object_catalogue(context, False)
+    vP.convert_to_file_structure(context)
     vP.convert_json(context)
