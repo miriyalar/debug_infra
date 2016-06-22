@@ -189,18 +189,47 @@ class ContrailApi:
             ret_list.append(select_list)
         return ret_list
 
+
+    def _get_obj_matching_with_fields(self, obj, field, depth=0):
+        field_list = field.split('.')
+        if obj != None and depth != len(field_list):
+            ret_list = []
+            d_field = field_list[depth]
+            cur_field = d_field.split('==')[0]
+            if cur_field in obj:
+                new_obj = obj[cur_field]
+                if type(new_obj) == list:
+                    for element in new_obj:
+                        ret_objs = self._get_obj_matching_with_fields(element, 
+                                                                      field, 
+                                                                      depth=depth+1)
+                        ret_list = ret_list + ret_objs
+                    return ret_list
+                else:
+                    ret_objs = self._get_obj_matching_with_fields(new_obj,
+                                                                  field,
+                                                                  depth=depth+1)
+                    ret_list = ret_list + ret_objs
+                    return ret_list
+                    #return [new_obj]
+        elif obj != None and depth == len(field_list):
+            return [obj]
+
+
     def _is_obj_matching_with_filters(self, obj, filters):
-        filters_list = filters.split(',')
-        for filter_obj in filters_list:
-            filter_tmp = filter_obj.split('==')
-            obj_dict = obj[obj.keys()[0]]
-            if filter_tmp[0] in obj_dict and \
-                type(obj_dict[filter_tmp[0]]) != dict and \
-                type(obj_dict[filter_tmp[0]]) != list and \
-                filter_tmp[1] == obj_dict[filter_tmp[0]]:
-                #Assume filters for only one field for now.
-                return True
-        return False
+        filters_list = filters.split('&')
+        filtered_objs = {}
+        for filter in filters_list:
+            filter_key = filter.split('=')[0]
+            filter_value = filter.split('=')[1]
+            filtered_objs[filter_key] = self._get_obj_matching_with_fields(obj.values()[0], filter_key, depth=0)
+            match = False
+            for filtered_obj in filtered_objs[filter_key]:
+                if filter_value == filtered_obj:
+                    match = True
+            if not match:
+                return False
+        return True
 
     def get_object_with_filters(self, object_name, filters):
         """
@@ -225,7 +254,7 @@ class ContrailApi:
 	#Cut there a get object quick
         filters_list = filters.split(',')
         for filter_obj in filters_list:
-            filter_tmp = filter_obj.split('==')
+            filter_tmp = filter_obj.split('=')
             if filter_tmp[0] in _quick_list:
                 new_url = '%s/%s' % (object_name, filter_tmp[1])		
 		obj = self._api_con.get(new_url)

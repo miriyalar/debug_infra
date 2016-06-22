@@ -58,7 +58,7 @@ class ContrailUtils(object):
             vm_uuid = uuid
         else:
             #generic code to get associated Vrouter and control objects.
-            where = 'uuid==%s' %(uuid)
+            where = 'uuid=%s' %(uuid)
             config_api = ContrailApi(ip=config_ip, port=config_port, token=self.token)
             if self.check_for_vm_vmi_in_context(contrail_info, context_path, config_ip, config_port, analytics_ip, uve_obj, config_api):
                 return contrail_info

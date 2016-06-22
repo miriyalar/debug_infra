@@ -226,7 +226,7 @@ class baseVertex(object):
             schema_to_use = self.schema[object_type][key]
         except KeyError:
             schema_to_use = None
-        where = '%s==%s' % (key, value)
+        where = '%s=%s' % (key, value)
         ret_obj_list, self.config_objs = self.config.get_object(object_type,
                                                   schema_to_use=schema_to_use,
                                                   where=where)
