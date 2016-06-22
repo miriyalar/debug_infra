@@ -101,7 +101,7 @@ class ContrailApiConnection:
         self._hdr = headers
         _con.setopt(pycurl.HTTPHEADER, headers)
         self._set_auth(_con)
-        print url
+        ##print url
         try:
             _con.perform()
         except pycurl.error as e:
@@ -173,7 +173,7 @@ class ContrailApiConnection:
         # Set our header function.
 #        _con.setopt(_con.HEADERFUNCTION, self.header_function)
 
-        print url
+        ##print url
         try:
             _con.perform()
         except pycurl.error as e:
@@ -224,7 +224,7 @@ class ContrailApiConnection:
         self.resp_buffer = BytesIO()
         _con.setopt(_con.WRITEFUNCTION, self.resp_buffer.write)
         #_con.setopt(pycurl.VERBOSE, 1)
-        print url
+        ##print url
         try:
             _con.perform()
         except pycurl.error as e:

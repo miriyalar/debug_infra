@@ -47,6 +47,7 @@ class baseVertex(object):
         self.control = None
         self.analytics = None
         self.vrouter = None
+        self.vertexes = []
         self.config_objs = {}
         if not context:
             self.context = create_global_context(**kwargs)
@@ -157,6 +158,9 @@ class baseVertex(object):
             eval(dependant_vertex)(context=self.context, element=element)
             self._remove_from_context_path(element)
 
+    def get_vertexes(self):
+        return self.vertexes
+
     def _create_vertex(self, vertex_type, uuid, fq_name=None):
         vertex = {
             'uuid': uuid,
@@ -172,6 +176,7 @@ class baseVertex(object):
     def _store_vertex(self, vertex_type, uuid, config_obj):
         fq_name = ':'.join(config_obj[vertex_type]['fq_name'])
         vertex = self._create_vertex(vertex_type, uuid, fq_name)
+        self.vertexes.append(vertex)
         self.context['vertexes'][vertex_type].append(vertex)
         self.context['visited_vertexes'][uuid] = vertex
         self.context['visited_nodes'][vertex_type + ', ' + fq_name] = vertex
@@ -285,13 +290,16 @@ class baseVertex(object):
         url_dict_resp = Introspect(url=url_str).get()
         config[vertex_type] = url_dict_resp
         return config
-
+        
     def agent_oper_db(self, agent_oper_func, vertex_type, vertex):
         ret = {}
         for vrouter in self.vrouter.vrouter_nodes:
             ret[vrouter['hostname']] = agent_oper_func(vrouter['ip_address'], vrouter['sandesh_http_port'],
                                                       vertex_type, vertex)
         return ret
+
+    def get_vrouters(self):
+        return self.vrouter.get_nodes()
 
     def _add_agent_to_context(self, uuid, agent):
         self.context['visited_vertexes'][uuid]['agent'].update(agent)

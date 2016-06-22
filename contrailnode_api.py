@@ -70,6 +70,8 @@ class ConfigNode:
 class Vrouter:
     def __init__(self, vrouter_nodes):
         self.vrouter_nodes = vrouter_nodes
+    def get_nodes(self):
+        return self.vrouter_nodes
     def introspect(self, url, ip=None, port=None, key=None):
         return IntrospectNode.introspect(url, 'vrouter_', self.vrouter_nodes,
                         ip, port, key)
@@ -77,6 +79,8 @@ class Vrouter:
 class ControlNode:
     def __init__(self, control_nodes):
         self.control_nodes = control_nodes
+    def get_nodes(self):
+        return self.control_nodes
     def introspect(self, url, ip=None, port=None, key=None):
         return IntrospectNode.introspect(url, 'control_node_', self.control_nodes,
                                ip, port, key)
