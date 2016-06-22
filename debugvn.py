@@ -55,6 +55,7 @@ class debugVertexVN(baseVertex):
 
 def parse_args(args):
     parser = ArgumentParser(description='Debug utility for VN', add_help=True)
+    parser.add_argument('--display_name', help='Display name')
     return parser.parse_args(args)
 
 if __name__ == '__main__':

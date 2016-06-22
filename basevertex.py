@@ -206,30 +206,28 @@ class baseVertex(object):
     def _locate_obj(self):
         input_dict = {'match_dict': {}}
         if self.element != None:
-            element_type = self.element['type']
-            element_uuid = self.element['uuid']
-            input_dict = {"type": element_type,
-                          "match_dict" : {'uuid': element_uuid} }
+            object_type = self.element['type']
+            key = 'uuid'
+            where = '%s=%s' % (key, self.element['uuid'])
         else:
-            input_dict['type'] = self.obj_type
-            for key,value in self.match_kv.iteritems():
-                #if key == 'obj_type':
-                #    input_dict['type'] = value
-                #else:
-                    if value:
-                        input_dict['match_dict'][key] = value
-                        #for now just one match
-                        break
-        object_type = input_dict['type']
-        key, value = input_dict['match_dict'].popitem()
+            object_type = self.obj_type
+            where = ''
+            if self.match_kv.get('uuid', None):
+                key = 'uuid'
+            else:
+                self.match_kv.keys()[0]
+            for k,v in self.match_kv.iteritems():
+                if v:
+                    if where:
+                        where += '&'
+                    where += '%s=%s' % (k, v)
         try:
             schema_to_use = self.schema[object_type][key]
         except KeyError:
             schema_to_use = None
-        where = '%s=%s' % (key, value)
         ret_obj_list, self.config_objs = self.config.get_object(object_type,
-                                                  schema_to_use=schema_to_use,
-                                                  where=where)
+                                                                schema_to_use=schema_to_use,
+                                                                where=where)
         return ret_obj_list
 
     def _store_config(self, vertex_type, uuid, obj, config_objs):

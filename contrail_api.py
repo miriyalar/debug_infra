@@ -212,6 +212,8 @@ class ContrailApi:
                     ret_list = ret_list + ret_objs
                     return ret_list
                     #return [new_obj]
+            else:
+                return ret_list
         elif obj != None and depth == len(field_list):
             return [obj]
 
