@@ -8,9 +8,7 @@ from collections import OrderedDict, defaultdict
 from contrailnode_api import ControlNode, ConfigNode, Vrouter, AnalyticsNode
 from keystone_auth import ContrailKeystoneAuth
 from abc import ABCMeta, abstractmethod
-import ConfigParser
-import sys
-import os
+import logging
 
 def get_keystone_auth_token(**kwargs):
     token = None
@@ -37,32 +35,38 @@ def create_global_context(**kwargs):
     gcontext['config_port'] = kwargs.get('config_port')
     gcontext['contrail'] = {}
     gcontext['token'] = get_keystone_auth_token(**kwargs)
+    gcontext['depth'] = kwargs.get('depth', -1)
     return gcontext
 
 class baseVertex(object):
     '''Abstract Base Class for Vertex'''
     __metaclass__ = ABCMeta
     def __init__(self, context=None, **kwargs):
+        verbose = kwargs.get('verbose', None)
+        loglevel = logging.DEBUG if verbose else logging.INFO
+        self.logger = logger(logger_name=self.get_class_name(),
+                             file_level=loglevel).get_logger()
         self.config = None
         self.control = None
         self.analytics = None
         self.vrouter = None
         self.vertexes = []
         self.config_objs = {}
+        self.dependent_vertex_objs = list()
         if not context:
             self.context = create_global_context(**kwargs)
         else:
             self.context = context
         if self._is_vertex_type_exists_in_path(self.vertex_type):
             return
+        self.config_ip = self.context.get('config_ip')
+        self.config_port = self.context.get('config_port')
+        self.depth = self.context.get('depth')
         self.element = kwargs.get('element', None)
         self.uuid = kwargs.get('uuid', None)
         self.fq_name = kwargs.get('fq_name', None)
         self.display_name = kwargs.get('display_name', None)
-        self.config_ip = kwargs.get('config_ip', self.context.get('config_ip'))
-        self.config_port = kwargs.get('config_port', self.context.get('config_port'))
         self.obj_type = kwargs.get('obj_type', None) or self.vertex_type
-        self.logger = logger(logger_name=self.get_class_name()).get_logger()
         self.token = self.context['token']
         if not self.token:
             self.logger.warn('Authentication failed: Unable to fetch token from keystone')
@@ -129,6 +133,9 @@ class baseVertex(object):
             self._store_analytics_uves(vertex_type, uuid, fq_name, obj)
             self._store_agent_config(vertex_type, obj)
             self.process_self(vertex_type, uuid, obj)
+            if self.depth == 0:
+                return
+            self.context['depth'] = self.context['depth'] - 1
             self._process_dependants(vertex_type, uuid, fq_name, self.dependant_vertexes)
 
     def _add_to_context_path(self, element):
@@ -155,7 +162,8 @@ class baseVertex(object):
                                        fq_name=fq_name)
         for dependant_vertex in dependant_vertexes:
             self._add_to_context_path(element)
-            eval(dependant_vertex)(context=self.context, element=element)
+            self.dependent_vertex_objs.append(
+                 eval(dependant_vertex)(context=self.context, element=element))
             self._remove_from_context_path(element)
 
     def get_vertexes(self):

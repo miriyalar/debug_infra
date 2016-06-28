@@ -2,14 +2,10 @@
 """Retrieve or Query an object from introspects"""
 
 import json
-import logging
+from logger import logger
 import requests
 from lxml import etree
 from pprint import pprint
-
-urllib3_logger = logging.getLogger('urllib3')
-urllib3_logger.setLevel(logging.CRITICAL)     
-log = logging.getLogger('contrail_debugger.introspect')
 
 class IntrospectUrl(object):
     def __init__(self, url, auth=None):

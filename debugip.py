@@ -1,6 +1,5 @@
 import sys
 import argparse
-from logger import logger
 from contrail_api import ContrailApi
 from introspect import Introspect
 from introspect import AgentIntrospectCfg
@@ -70,7 +69,7 @@ class debugVertexIP(baseVertex):
         if ip_address == self.instance_ip_address:
             pstr = "IP address %s is found in the interface rec %s" % \
                    (self.instance_ip_address, intf_rec['name'])
-            self.logger.debug(pstr)
+            self.logger.info(pstr)
             print pstr
         else:
             pstr = "IP address %s is NOT found in the interface rec %s" % \

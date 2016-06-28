@@ -1,5 +1,4 @@
 import sys
-from logger import logger
 from contrail_api import ContrailApi
 from introspect import Introspect
 from introspect import AgentIntrospectCfg

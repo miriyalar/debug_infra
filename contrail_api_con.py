@@ -1,11 +1,10 @@
 #!/bin/python
 import pdb
 import pycurl
-import logging
 import re
 import pprint
 import json
-import logging.handlers
+from logger import logger
 from utils import Utils
 from contrail_api_con_exception import ContrailApiConnectionException
 from contrail_con_enum import ContrailConError
@@ -21,19 +20,8 @@ class ContrailApiConnection:
     _con = None
     ip =''
     port = ''
-    username = ''
-    password = ''
     headers = {}
     resp_buffer = None
-    log = None
-
-    def _set_auth(self, con):
-        if self.username != None and self.password != None: 
-            auth_str = '%s:%s' % (self.username, self.password)
-            con.setopt(con.USERPWD, auth_str)
-            #self.log.info('Authentication is set!')
-        #else:
-            #self.log.info('Authentication not set!')
 
     def header_function(self, header_line):
         # HTTP standard specifies that headers are encoded in iso-8859-1.
@@ -63,30 +51,14 @@ class ContrailApiConnection:
         # Now we can actually record the header name and value.
         self.headers[name] = value
 
-    def  __init__(self, ip = None, port = None, username = None, password = None, headers = []):
-        #get logger object
-        log =  logging.getLogger("debug")
-        self.log = log
-        log.setLevel('ERROR')
-        logformat = logging.Formatter("%(levelname)s: %(message)s")
-#        fh = logging.FileHandler('debug.log')
-#        fh.setLevel(logging.DEBUG)
-
-        stdout = logging.StreamHandler()
-        stdout.setLevel('DEBUG')
-    #    fh.setFormatter(logformat)
-        log.addHandler(stdout)
-
-
+    def  __init__(self, ip = None, port = None, headers = []):
+        self.log =  logger(logger_name=self.__class__.__name__).get_logger()
         self.ip = ip
         self.port = port
-        self.username = username
-        self.password = password
-        #log.info(("Intializing with values %s:%s:%s:%s") % (ip, port, username, password))
         _con = pycurl.Curl()
         self._con = _con
         if not _con:
-            log.critical("Error creating the python object")
+            self.log.critical("Error creating the python object")
 	if (ip == None or port == None):
             return
 		
@@ -100,12 +72,11 @@ class ContrailApiConnection:
         _con.setopt(_con.HEADERFUNCTION, self.header_function)
         self._hdr = headers
         _con.setopt(pycurl.HTTPHEADER, headers)
-        self._set_auth(_con)
         ##print url
         try:
             _con.perform()
         except pycurl.error as e:
-            log.critical(("Error connecting to the server %s:%s") % (ip, port))
+            self.log.critical(("Error connecting to the server %s:%s") % (ip, port))
 
 	resp_code = self._get_resp_code(_con)
         #import pdb; pdb.set_trace()

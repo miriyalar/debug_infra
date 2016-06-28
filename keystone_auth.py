@@ -1,9 +1,8 @@
 #!/bin/python
 import pdb
-import logging
 import json
 import re
-import logging.handlers
+from logger import logger
 import ConfigParser
 import os.path
 from contrail_api_con import ContrailApiConnection
@@ -16,18 +15,14 @@ class ContrailKeystoneAuth:
         self._authn_user = admin_username
         self._authn_password = admin_password
         self._authn_tenant_name = admin_tenant_name
-#        log = logging.getLogger("AUTH")
-#        self.log = log
-#        log.setLevel('DEBUG')
-#        logformat = logging.Formatter("%(levelname)s: %(message)s")
-
-#        stdout = logging.StreamHandler()
-#        stdout.setLevel('DEBUG')
-#        log.addHandler(stdout)
+        self.log = logger(logger_name='KeystoneAuth').get_logger()
         self._keystone_con = ContrailApiConnection()
 
     def authenticate(self, headers = []):
         url = 'http://%s:%s%s' % (self._authn_server, self._authn_port , self._authn_url)
+        self.log.debug('Authenticating against %s with username: %s,'
+                       ' password: %s, tenant: %s'%(url, self._authn_user,
+                       self._authn_password, self._authn_tenant_name))
         authn_headers = ['Content-type: application/json; charset="UTF-8"', 'X-Contrail-Useragent: Debugger']
         headers = headers + authn_headers
         auth_body = {"auth":{"passwordCredentials":{"username": self._authn_user,

@@ -1,27 +1,17 @@
 #!/bin/python
 import pdb
-import logging
+from logger import logger
 import pprint
 import json
 import re
-import logging.handlers
 from urlparse import urlparse
 from contrail_api_con import ContrailApiConnection
 
 class ContrailUVE:
     _api_con = None
-    def __init__(self, ip = "127.0.0.1", port = "8081", username = None, password = None):
-        #get logger object
-        log =  logging.getLogger("UVE")
-        self.log = log
-        log.setLevel('DEBUG')
-        logformat = logging.Formatter("%(levelname)s: %(message)s")
-        stdout = logging.StreamHandler()
-        stdout.setLevel('DEBUG')
-        log.addHandler(stdout)
-        self._api_con = ContrailApiConnection(ip=ip, port=port,
-                                 username = username, password = password)
-
+    def __init__(self, ip = "127.0.0.1", port = "8081"):
+        self.log = logger(logger_name=self.__class__.__name__).get_logger()
+        self._api_con = ContrailApiConnection(ip=ip, port=port)
 
     def get_object_deep(self, object_name, obj_type, select_fields = []):
         pass

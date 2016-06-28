@@ -1,10 +1,9 @@
 #!/bin/python
 import pdb
-import logging
 import pprint
 import json
 import re
-import logging.handlers
+from logger import logger
 from urlparse import urlparse
 from contrail_api_con import ContrailApiConnection
 from contrail_api_con_exception import ContrailApiConnectionException
@@ -20,16 +19,7 @@ class ContrailApi:
     }
 
     def __init__(self, ip = "127.0.0.1", port = "8082", token=None):
-        #get logger object
-        log =  logging.getLogger("debug")
-        self.log = log
-        log.setLevel('DEBUG')
-        logformat = logging.Formatter("%(levelname)s: %(message)s")
-
-        stdout = logging.StreamHandler()
-        stdout.setLevel('DEBUG')
-        log.addHandler(stdout)
-
+        self.log = logger(logger_name=self.__class__.__name__).get_logger()
         self._ip = ip
         self._port = port
         if token:
