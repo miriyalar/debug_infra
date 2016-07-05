@@ -24,17 +24,17 @@ class debugVertexVM(baseVertex):
         }
         return schema_dict
 
-    def process_self(self, vertex_type, uuid, vertex):
+    def process_self(self, vertex):
         # Agent
         agent = {}
-        agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex_type, vertex)
-        self._add_agent_to_context(uuid, agent)
+        agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex)
+        self._add_agent_to_context(vertex, agent)
         control = {}
-        self._add_control_to_context(uuid, control)
+        self._add_control_to_context(vertex, control)
 
-    def _get_agent_oper_db(self, host_ip, agent_port, vertex_type, vertex):
+    def _get_agent_oper_db(self, host_ip, agent_port, vertex):
         base_url = 'http://%s:%s/%s' % (host_ip, agent_port, 'Snh_VmListReq?')
-        vm_uuid = vertex[vertex_type]['uuid']
+        vm_uuid = vertex['uuid']
         search_str = ('uuid=%s') % (vm_uuid)
         oper = {}
         url_dict_resp = Introspect(url=base_url + search_str).get()
@@ -58,13 +58,11 @@ def parse_args(args):
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
     vVM= debugVertexVM(**args)
-    context = vVM.get_context()
+    #context = vVM.get_context()
     #vertexPrint(context, detail=args.detail)
-    vP = vertexPrint(context)
+    vP = vertexPrint(vVM)
     #vP._visited_vertexes_brief(context)
-    vP.print_visited_nodes(context, detail=False)
+    #vP.print_visited_nodes(context, detail=False)
     #vP.print_object_catalogue(context, True)
-    vP.convert_json(context)
-    vP.convert_to_file_structure(context)
-
-
+    vP.convert_json()
+    #vP.convert_to_file_structure(context)

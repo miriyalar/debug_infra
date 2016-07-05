@@ -15,24 +15,24 @@ class debugVertexSG(baseVertex):
     dependant_vertexes = ['debugVertexVMI']
     vertex_type = 'security-group'
 
-    def process_self(self, vertex_type, uuid, vertex):
+    def process_self(self, vertex):
         agent = {}
-        agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex_type, vertex)
-        self._add_agent_to_context(uuid, agent)
+        agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex)
+        self._add_agent_to_context(vertex, agent)
         control = {}
         control['oper'] = {}
-        self._add_control_to_context(uuid, control)
+        self._add_control_to_context(vertex, control)
 
-    def _get_agent_oper_db(self, host_ip, agent_port, vertex_type, vertex):
+    def _get_agent_oper_db(self, host_ip, agent_port, vertex):
         error = False
         base_url = 'http://%s:%s/' % (host_ip, agent_port)
-        sg_uuid = vertex[vertex_type]['uuid']
+        sg_uuid = vertex['uuid']
         search_str = ('Snh_SgListReq?name=%s') % (sg_uuid)
         oper = {}
         url_dict_resp = Introspect(url=base_url + search_str).get()
         if len(url_dict_resp['SgListResp']['sg_list']) == 1:
             sg_rec = url_dict_resp['SgListResp']['sg_list'][0]
-            oper[vertex_type] = sg_rec
+            oper[vertex['vertex_type']] = sg_rec
         else:
             error = True
 
@@ -78,11 +78,11 @@ def parse_args(args):
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
     vSG= debugVertexSG(**args)
-    context = vSG.get_context()
+    #context = vSG.get_context()
     #vertexPrint(context, detail=args.detail)
     vP = vertexPrint(context)
     #vP._visited_vertexes_brief(context)
     #vP.print_visited_nodes(context, detail=False)
-    vP.print_object_catalogue(context, False)
-    vP.convert_to_file_structure(context)
-    vP.convert_json(context)
+    #vP.print_object_catalogue(context, False)
+    #vP.convert_to_file_structure(context)
+    vP.convert_json()

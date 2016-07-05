@@ -4,9 +4,9 @@ from utils import Utils
 
 class vertexPrint(object):
     context = None
-    def __init__(self, context, **kwargs):
+    def __init__(self, vertex, **kwargs):
         detail = kwargs.get('verbose', False)
-        self.context = context
+        self.vertex = vertex
         #self._visited_vertexes(context, detail=True)
         #self._visited_vertexes_brief(context)
         #self._context_path(context)
@@ -87,9 +87,9 @@ class vertexPrint(object):
                 pprint(visited_vertexes[uuid], indent = 2)
                 
 
-    def print_object_catalogue(self, context, detail):
+    def print_object_catalogue(self, detail):
         print 'print_object_catalogue'
-        vertexes = context['vertexes']
+        vertexes = self._get_merged_vertex(self.vertex)
         for k,v in vertexes.iteritems():
             #print('  {}'.format(k))
             for item in v:
@@ -98,31 +98,32 @@ class vertexPrint(object):
                 else:
                     pprint(item, indent = 2)
 
-    def print_object_list(self, context, object_type, details):
-        print 'print_object_list'
+    def _get_objects_from_context(self, object_type=None):
+        objs = {}
+        context = self.vertex.get_context()
+        objs['visited_vertexes'] = self._get_merged_vertex(self.vertex)
+        objs['summary_of_visited_vertexes'] = context['visited_vertexes_inorder']
+        return objs
 
-    
-    def _get_objects_from_context(self, context, object_type=None):
-        get_objs = {}
-        get_objs['visited_vertexes'] = {}
-        get_objs['summary_of_visited_vertexes'] = {}
-        if object_type:
-            get_objs['visited_vertexes'].update(context['vertexes'].get(object_type, {}))
-        else:
-            get_objs['visited_vertexes'].update(context['vertexes'])
-        get_objs['summary_of_visited_vertexes'] = context['visited_vertexes_inorder']
-        return get_objs
-
-    def convert_json(self, context, object_type=None, detail=True, file_name='debug_vertexes_output.json'):
-        print_list = self._get_objects_from_context(context, object_type)
+    def convert_json(self, object_type=None, detail=True, file_name='debug_vertexes_output.json'):
+        print_list = self._get_objects_from_context(object_type)
         with open(file_name, 'w') as fp:
             json.dump(print_list, fp)
             fp.close()
 
-    def convert_to_file_structure(self, context, object_type=None, cur_path='./', console_print=False):
-        convert_dict = self._get_objects_from_context(context, object_type)
+    def convert_to_file_structure(self, object_type=None, cur_path='./', console_print=False):
+        convert_dict = self._get_objects_from_context(object_type)
         Utils.dict_to_filesystem(convert_dict, cur_path=cur_path, console=console_print)
 
+    def _get_merged_vertex(self, vertex):
+        vertex_dict = dict()
+        obj = vertex.get_vertex()
+        if not obj:
+            return None
+        vertex_dict.update({obj[0]['vertex_type']: obj})
+        for vertex in vertex.get_dependent_vertices() or []:
+            Utils.merge_dict(vertex_dict, self._print_vertex(vertex))
+        return vertex_dict
 
 if __name__ == "__main__":
     import pdb;pdb.set_trace()

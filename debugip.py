@@ -30,33 +30,35 @@ class debugVertexIP(baseVertex):
         }
         return schema_dict
 
-    def process_self(self, vertex_type, uuid, vertex):
+    def process_self(self, vertex):
+        vertex_type = vertex['vertex_type']
         if not self.instance_ip_address:
-            self.instance_ip_address = vertex['instance-ip']['instance_ip_address']
+            self.instance_ip_address = self.get_attr(vertex, 'instance_ip_address')
+
         # Agent
         agent = {}
-        agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex_type, vertex)
-        self._add_agent_to_context(uuid, agent)
+        agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex)
+        self._add_agent_to_context(vertex, agent)
         # Control
         control = {}
         control['oper'] = {}
-        self._add_control_to_context(uuid, control)
+        self._add_control_to_context(vertex, control)
 
-    def _get_agent_oper_db(self, host_ip, agent_port, vertex_type, vertex):
+    def _get_agent_oper_db(self, host_ip, agent_port, vertex):
         oper = {}
         # Need to get the virtual-machine-interface record from the agent
         vmi_uuid = None
         adjacency_type='virtual-machine-interface'
         adjacency_list = AgentIntrospectCfg.get_adjacencies(ip=host_ip, sandesh_port=agent_port,
-                                                            uuid=vertex[vertex_type]['uuid'],
+                                                            uuid=vertex['uuid'],
                                                             adjacency_type=adjacency_type)
         for adjacency in adjacency_list:
             if adjacency[0] == adjacency_type:
                 vmi_uuid = adjacency[2]
                 break
         if not vmi_uuid:
-            self.logger.error("Agent Error, interface is not found in the adjancies of fip %s %s" % \
-                              (vertex_type, vertex[vertex_type]['uuid']))
+            self.logger.error("Agent Error, interface is not found in the adjancies of ip %s %s" % \
+                              (vertex['vertex_type'], vertex['uuid']))
             return oper
         base_url = 'http://%s:%s/' % (host_ip, agent_port)
         intf_str = 'Snh_ItfReq?'
@@ -114,13 +116,13 @@ if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
     vIIP= debugVertexIP(**args)
 
-    context = vIIP.get_context()
+    #context = vIIP.get_context()
     #vertexPrint(context, detail=args.detail)
-    vP = vertexPrint(context)
+    vP = vertexPrint(vIIP)
     #vP._visited_vertexes_brief(context)
     #vP.print_visited_nodes(context, detail=False)
     #vP.print_object_based_on_uuid( '9f838303-7d84-44c4-9aa3-b34a3e8e56b1',context, False)
     #vP.print_object_catalogue(context, False)
     #vP.print_visited_vertexes_inorder(context)
-    vP.convert_json(context)
+    vP.convert_json()
 

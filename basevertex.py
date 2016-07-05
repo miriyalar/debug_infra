@@ -26,7 +26,7 @@ def get_keystone_auth_token(**kwargs):
 def create_global_context(**kwargs):
     gcontext = {}
     gcontext['path'] = []
-    gcontext['visited_vertexes'] = {}
+    gcontext['visited_vertexes'] = []
     gcontext['vertexes'] = defaultdict(list)
     gcontext['visited_nodes'] = {}
     gcontext['visited_vertexes_inorder'] = []
@@ -81,7 +81,7 @@ class baseVertex(object):
         self.process_vertexes(self._locate_obj())
 
     @abstractmethod
-    def process_self(self, vertex_type, uuid, vertex):
+    def process_self(self, vertex):
         pass
 
     @abstractmethod
@@ -127,12 +127,12 @@ class baseVertex(object):
             if self._is_visited_vertex(uuid):
                 continue
             self._set_contrail_vrouter_objs(vertex_type, obj)
-            self._store_vertex(vertex_type, uuid, obj)
-            self._store_config(vertex_type, uuid, obj, self.config_objs)
-            self._store_control_config(vertex_type, obj)
-            self._store_analytics_uves(vertex_type, uuid, fq_name, obj)
-            self._store_agent_config(vertex_type, obj)
-            self.process_self(vertex_type, uuid, obj)
+            vertex = self._store_vertex(vertex_type, uuid, obj)
+            self._store_config(vertex, uuid, obj, self.config_objs)
+            self._store_control_config(vertex, obj)
+            self._store_analytics_uves(vertex, obj)
+            self._store_agent_config(vertex, obj)
+            self.process_self(vertex)
             if self.depth == 0:
                 return
             self.context['depth'] = self.context['depth'] - 1
@@ -166,7 +166,10 @@ class baseVertex(object):
                  eval(dependant_vertex)(context=self.context, element=element))
             self._remove_from_context_path(element)
 
-    def get_vertexes(self):
+    def get_dependent_vertices(self):
+        return self.dependent_vertex_objs
+
+    def get_vertex(self):
         return self.vertexes
 
     def _create_vertex(self, vertex_type, uuid, fq_name=None):
@@ -185,14 +188,14 @@ class baseVertex(object):
         fq_name = ':'.join(config_obj[vertex_type]['fq_name'])
         vertex = self._create_vertex(vertex_type, uuid, fq_name)
         self.vertexes.append(vertex)
-        self.context['vertexes'][vertex_type].append(vertex)
-        self.context['visited_vertexes'][uuid] = vertex
-        self.context['visited_nodes'][vertex_type + ', ' + fq_name] = vertex
+        self.context['visited_vertexes'].append(uuid)
+        #self.context['visited_nodes'][vertex_type + ', ' + fq_name] = vertex
         visited_vertexes_inorder = {'uuid': config_obj[vertex_type]['uuid'],
                                  'fq_name': fq_name,
                                  'display_name': config_obj[vertex_type]['display_name'],
                                  'vertex_type': vertex_type}
         self.context['visited_vertexes_inorder'].append(visited_vertexes_inorder)
+        return vertex
 
     def _is_visited_vertex(self, uuid):
         if self.context:
@@ -212,9 +215,6 @@ class baseVertex(object):
         element['uuid'] = uuid
         element['fq_name'] = fq_name
         return element
-
-    def get_class(self):
-        return self.__class__.__name__
 
     def _locate_obj(self):
         input_dict = {'match_dict': {}}
@@ -243,40 +243,41 @@ class baseVertex(object):
                                                                 where=where)
         return ret_obj_list
 
-    def _store_config(self, vertex_type, uuid, obj, config_objs):
+    def _store_config(self, vertex, uuid, obj, config_objs):
         cobj = config_objs.get(uuid, None)
         if cobj:
-            self.context['visited_vertexes'][uuid]['config'].update(cobj)
+            vertex['config'].update(cobj)
 
-    def _store_control_config(self, vertex_type, obj):
+    def _store_control_config(self, vertex, obj):
+        vertex_type = vertex['vertex_type']
         url_str = 'Snh_IFMapTableShowReq?table_name=&search_string='
-        uuid = obj[vertex_type]['uuid']
         url_str += '%s' % (':'.join(obj[vertex_type]['fq_name']))
         iobjs = self.control.introspect(url_str, key=vertex_type)
-        if 'config' not in self.context['visited_vertexes'][uuid]['control']:
-            self.context['visited_vertexes'][uuid]['control']['config'] = {}
-        config = self.context['visited_vertexes'][uuid]['control']['config']
+        if 'config' not in vertex['control']:
+            vertex['control']['config'] = {}
+        config = vertex['control']['config']
         Utils.merge_dict(config, iobjs)
 
-    def _store_analytics_uves(self, vertex_type, uuid, fq_name, obj):
+    def _store_analytics_uves(self, vertex, obj):
         # supported uve types, this check will be removed and
         # it would automatic check in the analytics calss
+        vertex_type = vertex['vertex_type']
+        fq_name = ':'.join(obj[vertex_type]['fq_name'])
         supported_list = ['virtual-machine-interface', 'virtual-machine', 'virtual-network']
         if vertex_type not in supported_list:
             return
         aobj = self.analytics.get_object(object_type=vertex_type, object_name=fq_name)
         if aobj:
-            self.context['visited_vertexes'][uuid]['analytics']['uve'].update(aobj)
+            vertex['analytics']['uve'].update(aobj)
 
-
-    def _store_agent_config(self, vertex_type, obj):
+    def _store_agent_config(self, vertex, obj):
+        vertex_type = vertex['vertex_type']
         url_str = 'Snh_ShowIFMapAgentReq?table_name=&node_sub_string='
         url_str += '%s' % (':'.join(obj[vertex_type]['fq_name']))
         iobjs = self.vrouter.introspect(url_str, key=vertex_type)
-        uuid = obj[vertex_type]['uuid']
-        if 'config' not in self.context['visited_vertexes'][uuid]['agent']:
-            self.context['visited_vertexes'][uuid]['agent']['config'] = {}
-        config = self.context['visited_vertexes'][uuid]['agent']['config']
+        if 'config' not in vertex['agent']:
+            vertex['agent']['config'] = {}
+        config = vertex['agent']['config']
         Utils.merge_dict(config, iobjs)
 
     # Config detail from agent
@@ -294,29 +295,51 @@ class baseVertex(object):
         config = {}
         url_str = 'http://%s:%s/' % (host_ip, control_port)
         url_str += 'Snh_IFMapTableShowReq?table_name=&search_string='
-        url_str += '%s' % (vertex[vertex_type]['uuid'])
+        url_str += '%s' % (vertex[vertex_type]['fq_name'])
         url_dict_resp = Introspect(url=url_str).get()
         config[vertex_type] = url_dict_resp
         return config
-        
-    def agent_oper_db(self, agent_oper_func, vertex_type, vertex):
+
+    def agent_oper_db(self, agent_oper_func, vertex):
         ret = {}
         for vrouter in self.vrouter.vrouter_nodes:
-            ret[vrouter['hostname']] = agent_oper_func(vrouter['ip_address'], vrouter['sandesh_http_port'],
-                                                      vertex_type, vertex)
+            ret[vrouter['hostname']] = agent_oper_func(vrouter['ip_address'],
+                                                       vrouter['sandesh_http_port'],
+                                                       vertex)
         return ret
 
     def get_vrouters(self):
         return self.vrouter.get_nodes()
 
-    def _add_agent_to_context(self, uuid, agent):
-        self.context['visited_vertexes'][uuid]['agent'].update(agent)
+    def _add_agent_to_context(self, vertex, agent):
+        vertex['agent'].update(agent)
 
-    def _add_control_to_context(self, uuid, control):
-        self.context['visited_vertexes'][uuid]['control'].update(control)
+    def _add_control_to_context(self, vertex, control):
+        vertex['control'].update(control)
 
-    def _add_config_to_context(self, uuid, config):
-        self.context['visited_vertexes'][uuid]['config'].update(config)
+    def _add_config_to_context(self, vertex, config):
+        vertex['config'].update(config)
+
+    def get_attr(self, vertex, attr, service='config', subtype=None, hostname=None):
+        '''
+           Fetch value of the requested attribute from the vertex
+           Possible services: config, control, agent, analytics
+           if service is not config do provide subtype as oper or config(default: config)
+           attr can be hierarchy of '.' separated keys
+           for eg: virtual_machine_interface_mac_addresses.mac_address.0
+        '''
+        vertex_type = vertex['vertex_type']
+        obj = vertex[service]
+        if service != 'config':
+           obj = obj[subtype] if subtype else obj['config']
+        obj = obj[hostname] if hostname else obj.values()[0]
+        d = obj[vertex_type] if vertex_type in obj else obj
+        for key in attr.split('.'):
+            try:
+                d = d[key]
+            except (KeyError, TypeError):
+                break #Should we return None or until we had parsed
+        return d
 
 if __name__ == '__main__':
     pass

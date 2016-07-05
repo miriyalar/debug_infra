@@ -14,13 +14,13 @@ class debugVertexVMI(baseVertex):
     dependant_vertexes = ['debugVertexVM', 'debugVertexVN', 'debugVertexSG', 'debugVertexIP']
     vertex_type = 'virtual-machine-interface'
 
-    def process_self(self, vertex_type, uuid, vertex):
+    def process_self(self, vertex):
         agent = {}
-        agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex_type, vertex)
-        self._add_agent_to_context(uuid, agent)
+        agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex)
+        self._add_agent_to_context(vertex, agent)
         control = {}
         control['oper'] = {}
-        self._add_control_to_context(uuid, control)
+        self._add_control_to_context(vertex, control)
 
     def get_schema(self):
         #VM UUID, VMI UUID, VMI Name, VN UUID
@@ -44,10 +44,10 @@ class debugVertexVMI(baseVertex):
         }
         return schema_dict
 
-    def _get_agent_oper_db(self, host_ip, agent_port, vertex_type, vertex):
+    def _get_agent_oper_db(self, host_ip, agent_port, vertex):
         error = False
         base_url = 'http://%s:%s/%s' % (host_ip, agent_port, 'Snh_ItfReq?')
-        vmi_uuid = vertex[vertex_type]['uuid']
+        vmi_uuid = vertex['uuid']
         search_str = ('name=&type=&uuid=%s') % (vmi_uuid)
         oper = {}
         url_dict_resp = Introspect(url=base_url + search_str).get()
@@ -104,12 +104,12 @@ def parse_args(args):
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
     vVMI= debugVertexVMI(**args)
-    context = vVMI.get_context()
+    #context = vVMI.get_context()
     #vertexPrint(context, detail=args.detail)
-    vP = vertexPrint(context)
+    vP = vertexPrint(vVMI)
     #vP._visited_vertexes_brief(context)
     #vP.print_visited_nodes(context, detail=False)
     #vP.print_object_based_on_uuid( '9f838303-7d84-44c4-9aa3-b34a3e8e56b1',context, False)
     #vP.print_object_catalogue(context, True)
-    vP.convert_json(context)
+    vP.convert_json()
 

@@ -111,7 +111,7 @@ class EtreeToDict(object):
             return f[0].text
         return None
 
-class Introspect(IntrospectUrl, EtreeToDict):
+class Introspect(IntrospectUrl):
     """ Get Introspect objects as python dictionary or xml
         foo = Introspect.from_ip(ip="10.10.10.1", port=8083, path="/Snh_AgentXmppConnectionStatusReq?")
         or
