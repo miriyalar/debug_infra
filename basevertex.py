@@ -96,7 +96,7 @@ class baseVertex(object):
             contrail_control = ContrailUtils(token=self.token).get_control_nodes(self.config_ip, self.config_port)
             self.context['contrail']['config'] = self.config = ConfigNode(contrail_control['config_nodes'], token=self.token)
             self.context['contrail']['control'] = self.control = ControlNode(contrail_control['control_nodes'])
-            self.context['contrail']['analytics'] = self.analytics = AnalyticsNode(contrail_control['analytics_nodes'])
+            self.context['contrail']['analytics'] = self.analytics = AnalyticsNode(contrail_control['analytics_nodes'], token=self.token)
             self.context['config_ip'] = self.config_ip
             self.context['config_port'] = self.config_port
 

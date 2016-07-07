@@ -11,8 +11,6 @@ from contrail_con_enum import ContrailConError
 import datetime
 
 class ContrailApi:
-    _api_con = None
-
     _ref_to_obj = {
         "virtual_machine_refs" : "virtual-machine",
         "virtual_machine_interface_refs": "virtual-machine-interface"
@@ -22,10 +20,9 @@ class ContrailApi:
         self.log = logger(logger_name=self.__class__.__name__).get_logger()
         self._ip = ip
         self._port = port
-        if token:
-            token_header = 'X-AUTH-TOKEN:%s' % (token)
+        token_header = {'X-AUTH-TOKEN': token} if token else {}
         self._api_con = ContrailApiConnection(ip=ip, port=port,
-                        headers = [token_header] if token else [])
+                        headers = token_header)
 
     def get_ip(self):
         return self._ip

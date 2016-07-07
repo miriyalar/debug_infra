@@ -10,13 +10,16 @@ class ContrailNodes:
         self.control = []
 
 class AnalyticsNode:
-    def __init__(self, analytics_nodes):
+    def __init__(self, analytics_nodes, token=None):
         self._analytics_nodes = analytics_nodes
         self._analytics_api = None
+        self.token = token
         for node in analytics_nodes:
-            self._analytics_api = ContrailUVE(ip=node['ip_address'], port=node['port'])
+            self._analytics_api = ContrailUVE(ip=node['ip_address'],
+                                              port=node['port'],
+                                              token=self.token)
             break
-    
+
     def get_object(self, category='uve', object_type=None, object_name=None, select_fields=[]):
         return self._analytics_api.get_object(object_name, object_type, select_fields)
 

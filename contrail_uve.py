@@ -8,10 +8,11 @@ from urlparse import urlparse
 from contrail_api_con import ContrailApiConnection
 
 class ContrailUVE:
-    _api_con = None
-    def __init__(self, ip = "127.0.0.1", port = "8081"):
+    def __init__(self, ip = "127.0.0.1", port = "8081", token=None):
         self.log = logger(logger_name=self.__class__.__name__).get_logger()
-        self._api_con = ContrailApiConnection(ip=ip, port=port)
+        token_header = {'X-AUTH-TOKEN': token} if token else {}
+        self._api_con = ContrailApiConnection(ip=ip, port=port,
+                                              headers=token_header)
 
     def get_object_deep(self, object_name, obj_type, select_fields = []):
         pass

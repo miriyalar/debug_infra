@@ -122,7 +122,7 @@ class vertexPrint(object):
             return None
         vertex_dict.update({obj[0]['vertex_type']: obj})
         for vertex in vertex.get_dependent_vertices() or []:
-            Utils.merge_dict(vertex_dict, self._print_vertex(vertex))
+            Utils.merge_dict(vertex_dict, self._get_merged_vertex(vertex))
         return vertex_dict
 
 if __name__ == "__main__":
