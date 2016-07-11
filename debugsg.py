@@ -1,12 +1,4 @@
 import sys
-import argparse
-import logging
-from logger import logger
-from contrail_api import ContrailApi
-from introspect import Introspect
-from introspect import AgentIntrospectCfg
-from contrail_utils import ContrailUtils
-from collections import OrderedDict
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
@@ -23,31 +15,27 @@ class debugVertexSG(baseVertex):
         control['oper'] = {}
         self._add_control_to_context(vertex, control)
 
-    def _get_agent_oper_db(self, host_ip, agent_port, vertex):
+    def _get_agent_oper_db(self, introspect, vertex):
         error = False
-        base_url = 'http://%s:%s/' % (host_ip, agent_port)
         sg_uuid = vertex['uuid']
-        search_str = ('Snh_SgListReq?name=%s') % (sg_uuid)
         oper = {}
-        url_dict_resp = Introspect(url=base_url + search_str).get()
-        if len(url_dict_resp['SgListResp']['sg_list']) == 1:
-            sg_rec = url_dict_resp['SgListResp']['sg_list'][0]
+        sg_info = introspect.get_sg_details(sg_uuid)
+        if len(sg_info['SgListResp']['sg_list']) == 1:
+            sg_rec = sg_info['SgListResp']['sg_list'][0]
             oper[vertex['vertex_type']] = sg_rec
         else:
             error = True
 
         egress_acl_uuid = sg_rec['egress_acl_uuid']
         ingress_acl_uuid = sg_rec['ingress_acl_uuid']
-        search_str = 'Snh_AclReq?x=%s' % (egress_acl_uuid)
-        url_dict_resp = Introspect(url=base_url + search_str).get()
+        url_dict_resp = introspect.get_acl_details(egress_acl_uuid)
         if len(url_dict_resp['AclResp']['acl_list']) == 1:
             egress_acl_rec = url_dict_resp['AclResp']['acl_list'][0]
             oper['egress_acl'] = egress_acl_rec
         else:
             error = True
 
-        search_str = 'Snh_AclReq?x=%s' % (ingress_acl_uuid)
-        url_dict_resp = Introspect(url=base_url + search_str).get()
+        url_dict_resp = introspect.get_acl_details(ingress_acl_uuid)
         if len(url_dict_resp['AclResp']['acl_list']) == 1:
             ingress_acl_rec = url_dict_resp['AclResp']['acl_list'][0]
             oper['ingress_acl'] = ingress_acl_rec
@@ -55,7 +43,6 @@ class debugVertexSG(baseVertex):
             error = True
         pstr = "Agent Verified security group %s %s" % (sg_uuid, 'with errors' if error else '')
         self.logger.debug(pstr)
-        #import pdb; pdb.set_trace()
         print pstr
         return oper
 

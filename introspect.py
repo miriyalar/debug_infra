@@ -1,26 +1,10 @@
 #!/usr/bin/env python
 """Retrieve or Query an object from introspects"""
 
-import json
-from logger import logger
 import requests
+from logger import logger
 from lxml import etree
-from pprint import pprint
-
-class IntrospectUrl(object):
-    def __init__(self, url, auth=None):
-        self._headers = {'X-AUTH-TOKEN': auth} if auth else None
-        self.url = url
-        self._load()
-
-    def _load(self):
-        self.response = requests.get(self.url, headers=self._headers)
-        if not self.response.status_code == 200:
-            raise RuntimeError('Retrieve URL (%s) failed with'
-                               ' status code (%s)' % (self.url, self.response.status_code))
-
-    def xml_to_etree(self):
-        return etree.fromstring(self.response.text)
+from netaddr import IPNetwork, IPAddress
 
 class EtreeToDict(object):
 
@@ -111,83 +95,124 @@ class EtreeToDict(object):
             return f[0].text
         return None
 
-class Introspect(IntrospectUrl):
-    """ Get Introspect objects as python dictionary or xml
-        foo = Introspect.from_ip(ip="10.10.10.1", port=8083, path="/Snh_AgentXmppConnectionStatusReq?")
-        or
-        foo = Introspect(url="http://10.10.10.1:8083/Snh_AgentXmppConnectionStatusReq?")
-    
-    """
+class Introspect(object):
+    def __init__(self, ip, port, auth=None):
+        self._ip = ip
+        self._port = port
+        self._headers = {'X-AUTH-TOKEN': auth} if auth else None
+        self.log = logger(logger_name=self.__class__.__name__).get_logger()
 
-    def __init__(self, **kwargs):
-        self.url = kwargs.get('url', None)
-        self.auth = kwargs.get('auth', None)
-        self.json = kwargs.get('json', True)
-        if self.url is None:
-            raise ValueError("Url is required but missing in ARGS")
+    def _mk_url_str(self, path=''):
+        if path.startswith('http:'):
+            return path
+        return "http://%s:%d/%s" % (self._ip, self._port, path)
 
-    @classmethod
-    def from_ip(cls, kwargs):
-        ip = kwargs.get('ip', None)
-        port = kwargs.get('port', None)
-        path = kwargs.get('path', None)
-        if (ip or port or path) is None:
-            raise ValueError('IP (%s) or PORT (%s) or PATH (%s)'
-                             ' is required but missing in ARGS' % (ip, port, path))
-        url = "http://%s:%s/%s" % (ip, port, path)
-        return cls(url=url, **kwargs)
+    def _load(self, url):
+        try:
+            resp = requests.get(url, headers=self._headers)
+            return resp
+        except requests.ConnectionError, e:
+            self.log.error("Socket Connection error: %s", str(e))
+            raise
 
-    def get_url_response(self):
-        self.url_obj = IntrospectUrl(url=self.url, auth=self.auth)
-        self.url_etree_resp = self.url_obj.xml_to_etree()
+    def get(self, path=''):
+        if path:
+            response = self._load(self._mk_url_str(path))
+        if response and response.status_code != 200:
+            raise RuntimeError('Retrieve URL (%s) failed with'
+                               ' status code (%s)' %(self._mk_url_str(path),
+                                                     response.status_code))
+        try:
+            resp = etree.fromstring(response.text)
+            return EtreeToDict().get_all_entry(resp)
+        except etree.XMLSyntaxError:
+            return json.loads(response.text)
 
-    def get(self, query=None):
-        self.get_url_response()
-        return EtreeToDict().get_all_entry(self.url_etree_resp)
+class ControllerIntrospect(Introspect):
+    def get_config(self, fq_name_str='', node_type=''):
+        url_path = 'Snh_IFMapTableShowReq?table_name=%s&search_string=%s'%(node_type, fq_name_str)
+        return self.get(path=url_path)
 
-
-class ControllerIntrospectCfg(object):
-    @classmethod
-    def verify(cls, url, verify_list=None):
-        for v in verify_list:
-            url_str = url + ('table_name=%s&search_string=%s') % (v['type'], v['fq_name'])
-            neighbors_l = cls.matched_adjacencies(url_str)
+    def verify(self, verify_list=None):
+        for v in verify_list or []:
+            neighbors_l = self.matched_adjacencies(node_type=v['type'],
+                                                   fq_name_str=v['fq_name'])
             for l in v['neighbors']:
                 if l not in neighbors_l:
-                    print "Controller Error: %s, neighbor not match" % l  
+                    self.log.error("Controller Error: %s, neighbor not match" % l)
                 else:
-                    print "Controller Match: %s, link matched" % l
+                    self.log.debug("Controller Match: %s, link matched" % l)
 
-    @classmethod
-    def matched_adjacencies(cls, url=None):
+    def matched_adjacencies(self, node_type, fq_name_str):
         neighbors= []
-        if not url:
-            return
-        iobj = Introspect(url=url) 
-        url_dict_resp = iobj.get()
-        # Save url_dict_resp 
+        url_dict_resp = self.get_config(node_type=node_type,
+                                        fq_name_str=fq_name_str)
+        # Save url_dict_resp
         neighbors = url_dict_resp['ifmap_db'][0]['neighbors']
         return neighbors
 
-class AgentIntrospectCfg(object):
-    @classmethod
-    def verify(cls, url, verify_list=None):
-        for v in verify_list:
-            url_str = url + ('table_name=%s&node_sub_string=%s') % (v['type'], v['fq_name'])
-            agent_adj_l = cls.matched_adjacencies(url_str)
+class AgentIntrospect(Introspect):
+    def get_intf_details(self, vmi_id=''):
+        url_path = 'Snh_ItfReq?name=&type=&uuid=%s'%(vmi_id)
+        return self.get(path=url_path)
+
+    def get_vrf_details(self, vrf_name=''):
+        url_path = 'Snh_VrfListReq?x=%s'%vrf_name
+        return self.get(path=url_path)
+
+    def get_vm_details(self, vm_id=''):
+        url_path = 'Snh_VmListReq?x=%s'%vm_id
+        return self.get(path=url_path)
+
+    def get_vn_details(self, vn_id=''):
+        url_path = 'Snh_VnListReq?name=&uuid=%s'%vn_id
+        return self.get(path=url_path)
+
+    def get_sg_details(self, sg_id=''):
+        url_path = 'Snh_SgListReq?name=%s'%sg_id
+        return self.get(path=url_path)
+
+    def get_acl_details(self, acl_id=''):
+        url_path = 'Snh_AclReq?x=%s'%acl_id
+        return self.get(path=url_path)
+
+    def get_config(self, fq_name_str='', node_type=''):
+        url_path = 'Snh_ShowIFMapAgentReq?table_name=%s&node_sub_string=%s'% (node_type, fq_name_str)
+        return self.get(path=url_path)
+
+    def get_routes(self, vrf_fq_name):
+        url_path = 'Snh_PageReq?x=begin:-1,end:-1,table:%s.uc.route.0'%vrf_fq_name
+        return self.get(path=url_path)
+
+    def is_prefix_exists(self, vrf_fq_name, prefix, plen=32):
+        routes = self.get_routes(vrf_fq_name)
+        for route in routes['Inet4UcRouteResp']['route_list']:
+            if route['src_ip'] == prefix and route['src_plen'] == str(plen):
+                return (True, route)
+        return (False, None)
+
+    def is_route_exists(self, vrf_fq_name, address):
+        routes = self.get_routes(vrf_fq_name)
+        for route in routes['Inet4UcRouteResp']['route_list']:
+            if IPAddress(address) in IPNetwork('%s/%s'%(route['src_ip'],
+                                                        route['src_plen'])):
+               return True
+        return False
+
+    def verify(self, verify_list=None):
+        for v in verify_list or []:
+            agent_adj_l = self.matched_adjacencies(node_type=v['type'],
+                                                   fq_name_str=v['fq_name'])
             for l in v['neighbors']:
                 if l not in agent_adj_l:
-                    print "Agent Error: %s, link not matched" % l
+                    self.log.error("Agent Error: %s, link not matched" % l)
                 else:
-                    print "Agent Match: %s, link matched" % l
+                    self.log.debug("Agent Match: %s, link matched" % l)
 
-    @classmethod
-    def matched_adjacencies(cls, url=None):
+    def matched_adjacencies(self, node_type, fq_name_str):
         adjacencies = []
-        if not url:
-            return
-        iobj = Introspect(url=url) 
-        url_dict_resp = iobj.get()
+        url_dict_resp = self.get_config(node_type=node_type,
+                                        fq_name_str=fq_name_str)
         # Save the url_dict_resp
         table_data = url_dict_resp['table_data'][0].split()
         if 'Adjacencies:' in table_data:
@@ -197,20 +222,11 @@ class AgentIntrospectCfg(object):
                 #adjacencies_tuple = [(k,v) for (k, v) in zip(table_data,table_data[1:])[adj_index::2]]
         return adjacencies
 
-    @classmethod
-    def get_adjacencies(cls, url=None, iobj=None, adjacency_type=None, **kwargs):
+    def get_adjacencies(self, adjacency_type=None, uuid=None):
+        if not uuid:
+            return None
         adjacency_list = []
-        if not url and not iobj:
-            ip = kwargs.get('ip', None)
-            sandesh_port = kwargs.get('sandesh_port', None)
-            uuid = kwargs.get('uuid', None)
-            if ip and sandesh_port and uuid:
-                url = 'http://%s:%s/Snh_ShowIFMapAgentReq?table_name=&node_sub_string=%s' % \
-                      (ip, sandesh_port, uuid)
-            else:
-                return adjacency_list
-            iobj = Introspect(url=url) 
-        url_dict_resp = iobj.get()
+        url_dict_resp = self.get_config(fq_name_str=uuid)
         # Save the url_dict_resp
         table_data = url_dict_resp['table_data'][0].split()
         if 'Adjacencies:' in table_data:
@@ -259,7 +275,6 @@ agent_port = ':8085/'
 controller_port = ':8083/'
 
 if __name__ == '__main__':
-    ifmap_agent_base_url = base_url + agent_port + 'Snh_ShowIFMapAgentReq?'
-    AgentIntrospectCfg.verify(url=ifmap_agent_base_url, verify_list=verify_list)
+    AgentIntrospect.verify(verify_list=verify_list)
     ifmap_agent_base_url = base_url + controller_port + 'Snh_IFMapTableShowReq?'
-    ControllerIntrospectCfg.verify(url=ifmap_agent_base_url, verify_list=verify_list)
+    ControllerIntrospect.verify(url=ifmap_agent_base_url, verify_list=verify_list)

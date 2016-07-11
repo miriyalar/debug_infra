@@ -1,11 +1,4 @@
 import sys
-import argparse
-from logger import logger
-from contrail_api import ContrailApi
-from introspect import Introspect
-from introspect import AgentIntrospectCfg
-from contrail_utils import ContrailUtils
-from collections import OrderedDict
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
@@ -32,15 +25,13 @@ class debugVertexVM(baseVertex):
         control = {}
         self._add_control_to_context(vertex, control)
 
-    def _get_agent_oper_db(self, host_ip, agent_port, vertex):
-        base_url = 'http://%s:%s/%s' % (host_ip, agent_port, 'Snh_VmListReq?')
-        vm_uuid = vertex['uuid']
-        search_str = ('uuid=%s') % (vm_uuid)
+    def _get_agent_oper_db(self, introspect, vertex):
         oper = {}
-        url_dict_resp = Introspect(url=base_url + search_str).get()
-        oper['vm'] = url_dict_resp
-        if len(url_dict_resp['VmListResp']['vm_list']) == 1:
-            vm_rec = url_dict_resp['VmListResp']['vm_list'][0]
+        vm_uuid = vertex['uuid']
+        vm_info = introspect.get_vm_details(vm_uuid)
+        oper['vm'] = vm_info
+        if len(vm_info['VmListResp']['vm_list']) == 1:
+            vm_rec = vm_info['VmListResp']['vm_list'][0]
             if vm_uuid == vm_rec['uuid']:
                 pstr  = "Agent VM %s is present" % (vm_uuid)
                 self.logger.debug(pstr)

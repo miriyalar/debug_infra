@@ -1,10 +1,4 @@
 import sys
-import argparse
-from contrail_api import ContrailApi
-from introspect import Introspect
-from introspect import AgentIntrospectCfg
-from contrail_utils import ContrailUtils
-from collections import OrderedDict
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
@@ -44,14 +38,13 @@ class debugVertexIP(baseVertex):
         control['oper'] = {}
         self._add_control_to_context(vertex, control)
 
-    def _get_agent_oper_db(self, host_ip, agent_port, vertex):
+    def _get_agent_oper_db(self, inspect_h, vertex):
         oper = {}
         # Need to get the virtual-machine-interface record from the agent
         vmi_uuid = None
         adjacency_type='virtual-machine-interface'
-        adjacency_list = AgentIntrospectCfg.get_adjacencies(ip=host_ip, sandesh_port=agent_port,
-                                                            uuid=vertex['uuid'],
-                                                            adjacency_type=adjacency_type)
+        adjacency_list = inspect_h.get_adjacencies(uuid=vertex['uuid'],
+                                                   adjacency_type=adjacency_type)
         for adjacency in adjacency_list:
             if adjacency[0] == adjacency_type:
                 vmi_uuid = adjacency[2]
@@ -60,11 +53,8 @@ class debugVertexIP(baseVertex):
             self.logger.error("Agent Error, interface is not found in the adjancies of ip %s %s" % \
                               (vertex['vertex_type'], vertex['uuid']))
             return oper
-        base_url = 'http://%s:%s/' % (host_ip, agent_port)
-        intf_str = 'Snh_ItfReq?'
-        search_str = ('name=&type=&uuid=%s') % (vmi_uuid)
-        url_dict_resp = Introspect(url=base_url + intf_str + search_str).get()
-        intf_rec = url_dict_resp['ItfResp']['itf_list'][0]
+        intf_details = inspect_h.get_intf_details(vmi_id=vmi_uuid)
+        intf_rec = intf_details['ItfResp']['itf_list'][0]
         oper['interface'] = intf_rec
 
         ip_address = oper['interface']['ip_addr']
@@ -80,27 +70,12 @@ class debugVertexIP(baseVertex):
             print pstr
             return oper
 
-        # Get vrf from
-        vrf = intf_rec['vrf_name']
-        vrf_str = 'Snh_VrfListReq?'
-        search_str = ('x=%s') % (vrf)
-        ivrfobj = Introspect(url= base_url + vrf_str + search_str)
-        vrfobj = ivrfobj.get()
-        if vrfobj['VrfListResp']['vrf_list']:
-            ucindex = vrfobj['VrfListResp']['vrf_list'][0]['ucindex']
-        else:
-            self.logger.error("Agent Error, fip vrf not found")
-            return oper
-
         # Get routing entry
-        route_str = 'Snh_Inet4UcRouteReq?'
-        search_str = ('vrf_index=%s&src_ip=%s&prefix_len=32') % \
-                     (ucindex, ip_address)
-        routeobj = Introspect(url = base_url + route_str + search_str).get()
-        route_rec = routeobj['Inet4UcRouteResp']['route_list'][0]
-        oper['route'] = route_rec
-        if route_rec:
-            nh_list = route_rec['path_list']
+        (check, route) = inspect_h.is_prefix_exists(intf_rec['vrf_name'],
+                                                    prefix=ip_address)
+        oper['route'] = route
+        if check is True:
+            nh_list = route['path_list']
             if nh_list:
                 print "Agent got nh for %s" % (ip_address)
         else:

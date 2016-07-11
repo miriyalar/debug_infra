@@ -1,4 +1,4 @@
-from introspect import Introspect
+from introspect import ControllerIntrospect, AgentIntrospect
 from contrail_api import ContrailApi
 from contrail_uve import ContrailUVE
 
@@ -40,7 +40,7 @@ class ConfigNode:
                 capi['obj'] = ContrailApi(ip=capi['ip_address'], port=capi['port'], token=self.token)
                 self.config_api.append(capi)
 
-    def get_object(self, object_type, config_ip=None, config_port=None, 
+    def get_object(self, object_type, config_ip=None, config_port=None,
                    schema_to_use='', where=''):
         objs = {}
         dobjs = []
@@ -54,10 +54,10 @@ class ConfigNode:
             config_api = self.config_api
         for capi in config_api:
             try:
-                dobjs = capi['obj'].get_object_deep(object_type, 
-                                                    schema_to_use, 
+                dobjs = capi['obj'].get_object_deep(object_type,
+                                                    schema_to_use,
                                                     where=where)
-                
+
                 for dobj in dobjs:
                     uuid_obj = dobj.values()[0]['uuid']
                     hostname = capi['hostname']
@@ -69,28 +69,32 @@ class ConfigNode:
             except:
                 pass
         return dobjs, objs
-                
-class Vrouter:
+
+class IntrospectNode(object):
+    def __init__(self, nodes, _cls):
+        self.nodes = nodes
+        self.handles = dict()
+        for node in self.nodes:
+            self.handles[node['ip_address']] = _cls(ip=node['ip_address'],
+                                                    port=node['sandesh_http_port'])
+    def get_nodes(self):
+        return self.nodes
+
+    def get_inspect_h(self, ip):
+        return self.handles[ip]
+
+class Vrouter(IntrospectNode):
     def __init__(self, vrouter_nodes):
-        self.vrouter_nodes = vrouter_nodes
-    def get_nodes(self):
-        return self.vrouter_nodes
-    def introspect(self, url, ip=None, port=None, key=None):
-        return IntrospectNode.introspect(url, 'vrouter_', self.vrouter_nodes,
-                        ip, port, key)
+        super(Vrouter, self).__init__(vrouter_nodes, AgentIntrospect)
 
-class ControlNode:
+class ControlNode(IntrospectNode):
     def __init__(self, control_nodes):
-        self.control_nodes = control_nodes
-    def get_nodes(self):
-        return self.control_nodes
-    def introspect(self, url, ip=None, port=None, key=None):
-        return IntrospectNode.introspect(url, 'control_node_', self.control_nodes,
-                               ip, port, key)
+        super(ControlNode, self).__init__(control_nodes, ControllerIntrospect)
 
+'''
 class IntrospectNode:
     @staticmethod
-    def introspect(url, node_type, nodes, ip=None, port=None, key=None):
+    def introspect(url, nodes, ip=None, port=None, key=None):
         ispect = {}
         if ip and port:
             nodes = [{'ip_address': ip,'sandesh_http_port': port, 'hostname':None}]
@@ -109,3 +113,4 @@ class IntrospectNode:
                 ispect[hostname] = url_dict_resp
         #Utils.merge_dict(
         return ispect
+'''

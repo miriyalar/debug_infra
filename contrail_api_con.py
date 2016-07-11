@@ -1,6 +1,5 @@
 #!/bin/python
 import pdb
-import pycurl
 import re
 import pprint
 import json

@@ -1,9 +1,4 @@
 import sys
-from contrail_api import ContrailApi
-from introspect import Introspect
-from introspect import AgentIntrospectCfg
-from contrail_utils import ContrailUtils
-from collections import OrderedDict
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
@@ -20,15 +15,13 @@ class debugVertexVN(baseVertex):
         control['oper'] = {}
         self._add_control_to_context(vertex, control)
 
-    def _get_agent_oper_db(self, host_ip, agent_port, vertex):
+    def _get_agent_oper_db(self, introspect, vertex):
         error = False
-        base_url = 'http://%s:%s/' % (host_ip, agent_port)
         vn_uuid = vertex['uuid']
-        search_str = 'Snh_VnListReq?name=&uuid=%s' % (vn_uuid)
         oper = {}
-        url_dict_resp = Introspect(url=base_url + search_str).get()
-        if len(url_dict_resp['VnListResp']['vn_list']) == 1:
-            vn_rec = url_dict_resp['VnListResp']['vn_list'][0]
+        vn_info = introspect.get_vn_details(vn_uuid)
+        if len(vn_info['VnListResp']['vn_list']) == 1:
+            vn_rec = vn_info['VnListResp']['vn_list'][0]
             oper[vertex['vertex_type']] = vn_rec
         else:
             error = True

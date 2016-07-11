@@ -178,8 +178,8 @@ class baseVertex(object):
             'fq_name': fq_name,
             'vertex_type': vertex_type,
             'config': {},
-            'agent' : {},
-            'control': {},
+            'agent' : defaultdict(dict),
+            'control': defaultdict(dict),
             'analytics': {'uve':{}},
         }
         return vertex
@@ -250,11 +250,11 @@ class baseVertex(object):
 
     def _store_control_config(self, vertex, obj):
         vertex_type = vertex['vertex_type']
-        url_str = 'Snh_IFMapTableShowReq?table_name=&search_string='
-        url_str += '%s' % (':'.join(obj[vertex_type]['fq_name']))
-        iobjs = self.control.introspect(url_str, key=vertex_type)
-        if 'config' not in vertex['control']:
-            vertex['control']['config'] = {}
+        fq_name_str = ':'.join(obj[vertex_type]['fq_name'])
+        iobjs = defaultdict(dict)
+        for node in self.control.get_nodes():
+            inspect = self.control.get_inspect_h(node['ip_address'])
+            iobjs[node['hostname']][vertex_type] = inspect.get_config(fq_name_str=fq_name_str)
         config = vertex['control']['config']
         Utils.merge_dict(config, iobjs)
 
@@ -272,40 +272,19 @@ class baseVertex(object):
 
     def _store_agent_config(self, vertex, obj):
         vertex_type = vertex['vertex_type']
-        url_str = 'Snh_ShowIFMapAgentReq?table_name=&node_sub_string='
-        url_str += '%s' % (':'.join(obj[vertex_type]['fq_name']))
-        iobjs = self.vrouter.introspect(url_str, key=vertex_type)
-        if 'config' not in vertex['agent']:
-            vertex['agent']['config'] = {}
+        fq_name_str = ':'.join(obj[vertex_type]['fq_name'])
+        iobjs = defaultdict(dict)
+        for node in self.vrouter.get_nodes():
+             inspect = self.vrouter.get_inspect_h(node['ip_address'])
+             iobjs[node['hostname']][vertex_type] = inspect.get_config(fq_name_str=fq_name_str)
         config = vertex['agent']['config']
         Utils.merge_dict(config, iobjs)
 
-    # Config detail from agent
-    def _get_agent_config_db(self, host_ip, agent_port, vertex_type, vertex):
-        config = {}
-        url_str = 'http://%s:%s/' % (host_ip, agent_port)
-        url_str += 'Snh_ShowIFMapAgentReq?table_name=&node_sub_string='
-        url_str += '%s' % (':'.join(vertex[vertex_type]['fq_name']))
-        url_dict_resp = Introspect(url=url_str).get()
-        config[vertex_type] = url_dict_resp
-        return config
-
-    # Config detail from controller
-    def _get_control_config_db(self, host_ip, control_port, vertex_type, vertex):
-        config = {}
-        url_str = 'http://%s:%s/' % (host_ip, control_port)
-        url_str += 'Snh_IFMapTableShowReq?table_name=&search_string='
-        url_str += '%s' % (vertex[vertex_type]['fq_name'])
-        url_dict_resp = Introspect(url=url_str).get()
-        config[vertex_type] = url_dict_resp
-        return config
-
     def agent_oper_db(self, agent_oper_func, vertex):
         ret = {}
-        for vrouter in self.vrouter.vrouter_nodes:
-            ret[vrouter['hostname']] = agent_oper_func(vrouter['ip_address'],
-                                                       vrouter['sandesh_http_port'],
-                                                       vertex)
+        for vrouter in self.vrouter.get_nodes():
+            inspect = self.vrouter.get_inspect_h(vrouter['ip_address'])
+            ret[vrouter['hostname']] = agent_oper_func(inspect, vertex)
         return ret
 
     def get_vrouters(self):

@@ -1,11 +1,4 @@
 import sys
-import argparse
-from logger import logger
-from contrail_api import ContrailApi
-from introspect import Introspect
-from introspect import AgentIntrospectCfg
-from contrail_utils import ContrailUtils
-from collections import OrderedDict
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
@@ -44,15 +37,13 @@ class debugVertexVMI(baseVertex):
         }
         return schema_dict
 
-    def _get_agent_oper_db(self, host_ip, agent_port, vertex):
+    def _get_agent_oper_db(self, introspect, vertex):
         error = False
-        base_url = 'http://%s:%s/%s' % (host_ip, agent_port, 'Snh_ItfReq?')
-        vmi_uuid = vertex['uuid']
-        search_str = ('name=&type=&uuid=%s') % (vmi_uuid)
         oper = {}
-        url_dict_resp = Introspect(url=base_url + search_str).get()
-        if len(url_dict_resp['ItfResp']['itf_list']) == 1:
-            intf_rec = url_dict_resp['ItfResp']['itf_list'][0]
+        vmi_uuid = vertex['uuid']
+        intf_details = introspect.get_intf_details(vmi_id=vmi_uuid)
+        if len(intf_details['ItfResp']['itf_list']) == 1:
+            intf_rec = intf_details['ItfResp']['itf_list'][0]
         else:
             pstr = "Agent Error interface uuid %s, doesn't exist" % (vmi_uuid)
             error = True
@@ -94,7 +85,7 @@ class debugVertexVMI(baseVertex):
         pstr = "Agent Verified interface %s %s" % (intf_rec['name'], 'with errors' if error else '')
         self.logger.debug(pstr)
         print pstr
-        oper['interface'] = url_dict_resp
+        oper['interface'] = intf_details
         return oper
 
 def parse_args(args):
