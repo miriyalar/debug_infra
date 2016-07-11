@@ -27,6 +27,7 @@ class ArgumentParser(argparse.ArgumentParser):
         self.add_argument("-c", "--config", help="Specify conf file", metavar="FILE", default='debug.ini')
         self.add_argument("-v", "--verbose", help="Enable verbose output", action="store_true")
         self.add_argument("-d", "--discard", help="Disable dump of json output to file", action="store_true")
+        self.add_argument("-D", "--depth", type=int, default=-1, help="Depth of the dependent vertexes to process")
         self.add_argument("-V", "--verify", help="Verify objects", action="store_true")
         self.add_argument("--username", help="stack username")
         self.add_argument("--password", help="stack password")

@@ -1,7 +1,3 @@
-import sys
-import pdb
-
-
 class ContrailApiConnectionException(Exception):
 
     def __init__(self, msg, ret_code = 0):

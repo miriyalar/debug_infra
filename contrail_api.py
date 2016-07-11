@@ -1,10 +1,9 @@
 #!/bin/python
 import pdb
-import logging
 import pprint
 import json
 import re
-import logging.handlers
+from logger import logger
 from urlparse import urlparse
 from contrail_api_con import ContrailApiConnection
 from contrail_api_con_exception import ContrailApiConnectionException
@@ -12,30 +11,18 @@ from contrail_con_enum import ContrailConError
 import datetime
 
 class ContrailApi:
-    _api_con = None
-
     _ref_to_obj = {
         "virtual_machine_refs" : "virtual-machine",
         "virtual_machine_interface_refs": "virtual-machine-interface"
     }
 
     def __init__(self, ip = "127.0.0.1", port = "8082", token=None):
-        #get logger object
-        log =  logging.getLogger("debug")
-        self.log = log
-        log.setLevel('DEBUG')
-        logformat = logging.Formatter("%(levelname)s: %(message)s")
-
-        stdout = logging.StreamHandler()
-        stdout.setLevel('DEBUG')
-        log.addHandler(stdout)
-
+        self.log = logger(logger_name=self.__class__.__name__).get_logger()
         self._ip = ip
         self._port = port
-        if token:
-            token_header = 'X-AUTH-TOKEN:%s' % (token)
+        token_header = {'X-AUTH-TOKEN': token} if token else {}
         self._api_con = ContrailApiConnection(ip=ip, port=port,
-                        headers = [token_header] if token else [])
+                        headers = token_header)
 
     def get_ip(self):
         return self._ip

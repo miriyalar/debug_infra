@@ -18,6 +18,8 @@ class Utils():
 
     @staticmethod
     def merge_dict(d1, d2):
+        if not d2:
+            return d1
         for k,v2 in d2.items():
             v1 = d1.get(k) 
             if (isinstance(v1, dict) and
