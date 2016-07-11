@@ -100,14 +100,14 @@ class baseVertex(object):
             self.context['config_ip'] = self.config_ip
             self.context['config_port'] = self.config_port
 
-    def _set_contrail_vrouter_objs(self, vertex_type, obj):
+    def _set_contrail_vrouter_objs(self, vertex, obj):
         contrail_info = ContrailUtils(token=self.token).get_contrail_info(
-                                                        obj[vertex_type]['uuid'],
-                                                        vertex_type,
+                                                        vertex['uuid'],
+                                                        vertex['vertex_type'],
                                                         config_ip=self.config_ip,
                                                         config_port=self.config_port,
                                                         context_path=self.context['path'],
-                                                        fq_name=obj[vertex_type]['fq_name'])
+                                                        fq_name=vertex['fq_name'])
         self.vrouter = Vrouter(contrail_info['vrouter'])
 
     def get_context(self):
@@ -126,8 +126,8 @@ class baseVertex(object):
             fq_name = ':'.join(obj[vertex_type]['fq_name'])
             if self._is_visited_vertex(uuid):
                 continue
-            self._set_contrail_vrouter_objs(vertex_type, obj)
             vertex = self._store_vertex(vertex_type, uuid, obj)
+            self._set_contrail_vrouter_objs(vertex, obj)
             self._store_config(vertex, uuid, obj, self.config_objs)
             self._store_control_config(vertex, obj)
             self._store_analytics_uves(vertex, obj)
