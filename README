@@ -19,6 +19,19 @@ python debugvn.py --display_name testvn
 Output:
 Debugs are located at debug_nodes.log
 context output is at debug_vertexes_output.json [Open using firefox, somehow chrome json viewer extension is not working for me]
-
+User has an option to print output in file structure format and json format
+Usage:
+   vp = vertexPrint(<vertex object>)
+   vp.convert_json() --> for json output
+   vp.convert_to_file_structure() --> for file structure output, default it will use the current dir (has an option to specify a path)
 
 Process of writing the code for new debugnode/debug vertex:
+Check debugsample.py vertex
+
+
+Details about the Classes/Utilities:
+baseVertex class:
+Utils:
+Logger:
+
+
