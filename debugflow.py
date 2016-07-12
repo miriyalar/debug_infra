@@ -9,16 +9,12 @@ should we create a singleton object for context and use it at baseVertex and bas
 import sys
 import argparse
 from logger import logger
-from contrail_api import ContrailApi
-from introspect import Introspect
-from introspect import AgentIntrospectCfg
-from contrail_utils import ContrailUtils
-from collections import OrderedDict
-from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
 from debugip import debugVertexIP
-from debugfip import debugVertexFIP
+from vertex_print import vertexPrint
+from utils import DictDiffer
+import time
 
 class debugVertexFlow(object):
     vertex_type = 'flow'
@@ -32,90 +28,84 @@ class debugVertexFlow(object):
         self.source_port = kwargs.pop('source_port', None)
         self.dest_port = kwargs.pop('dest_port', None)
         self.srcip_vertex = debugVertexIP(instance_ip_address=self.source_ip, **kwargs)
-        srcip_uuid = self.srcip_vertex.get_vertexes()[0]['uuid']
-        src_vrouter = self.srcip_vertex.get_vrouters()[0]
-        src_agent_oper = self._get_agent_oper_db(src_vrouter['hostname'] + ':src',
-                                                 src_vrouter['ip_address'], src_vrouter['sandesh_http_port'],
-                                                 srcip_uuid, self.source_ip)
+        self.context = self.srcip_vertex.get_context()
         self.destip_vertex = debugVertexIP(instance_ip_address=self.dest_ip,
-                                           context=self.srcip_vertex.get_context(), **kwargs)
-        destip_uuid = self.destip_vertex.get_vertexes()[0]['uuid']
-        dest_vrouter = self.destip_vertex.get_vrouters()[0]
-        dest_agent_oper = self._get_agent_oper_db(dest_vrouter['hostname'] + ':dest',
-                                                  dest_vrouter['ip_address'], dest_vrouter['sandesh_http_port'],
-                                                  destip_uuid, self.dest_ip)
-        import pdb; pdb.set_trace()
+                                           context=self.context, **kwargs)
+        self.src_vn_fqname = self.srcip_vertex.get_attr('virtual_network_refs.0.to')
+        self.dest_vn_fqname = self.destip_vertex.get_attr('virtual_network_refs.0.to')
+        self.source_vrf = ':'.join(self.src_vn_fqname+self.src_vn_fqname[-1:])
+        self.dest_vrf = ':'.join(self.dest_vn_fqname+self.dest_vn_fqname[-1:])
         self.check_routes()
+        self.check_flowtable()
+        self.check_dropstats()
+        self.vertexes = []
+        self.vertexes.extend(self.srcip_vertex.get_vertex())
+        self.vertexes.extend(self.destip_vertex.get_vertex())
 
+#        src_agent_oper = self._get_agent_oper_db(src_vrouter['hostname'] + ':src',
+#                                                 src_vrouter['ip_address'], src_vrouter['sandesh_http_port'],
+#                                                 srcip_uuid, self.source_ip)
+#        dest_agent_oper = self._get_agent_oper_db(dest_vrouter['hostname'] + ':dest',
+#                                                  dest_vrouter['ip_address'], dest_vrouter['sandesh_http_port'],
+#                                                  destip_uuid, self.dest_ip)
 
     def check_routes(self):
-        pass
+        for inspect in self.srcip_vertex.get_vrouters():
+            assert inspect.is_route_exists(self.source_vrf, self.dest_ip), 'route doesnt exist'
+            print 'route exists'
 
-    def _get_agent_oper_db(self, identifier, host_ip, agent_port, uuid, instance_ip):
-        oper = {}
-        oper[identifier] = {}
-        host_oper = oper[identifier]
-        error = False
-        adjacency_type='virtual-machine-interface'
-        adjacency_list = AgentIntrospectCfg.get_adjacencies(ip=host_ip, sandesh_port=agent_port,
-                                                            uuid=uuid,
-                                                            adjacency_type=adjacency_type)
-        for adjacency in adjacency_list:
-            if adjacency[0] == adjacency_type:
-                vmi_uuid = adjacency[2]
-                break
-        if not vmi_uuid:
-            self.logger.error("Agent Error, interface is not found in the adjancies of ip %s %s" % \
-                              (instance_ip, uuid))
-            return oper
-        base_url = 'http://%s:%s/' % (host_ip, agent_port)
-        intf_str = 'Snh_ItfReq?'
-        search_str = ('name=&type=&uuid=%s') % (vmi_uuid)
-        url_dict_resp = Introspect(url=base_url + intf_str + search_str).get()
-        intf_rec = url_dict_resp['ItfResp']['itf_list'][0]
-        host_oper['interface'] = intf_rec
+        for inspect in self.destip_vertex.get_vrouters():
+            assert inspect.is_route_exists(self.dest_vrf, self.source_ip), 'route doesnt exist'
+            print 'route exists'
 
-        ip_address = host_oper['interface']['ip_addr']
-        if ip_address == instance_ip:
-            pstr = "IP address %s is found in the interface rec %s" % \
-                   (instance_ip, intf_rec['name'])
-            self.logger.debug(pstr)
-            print pstr
-        else:
-            pstr = "IP address %s is NOT found in the interface rec %s" % \
-                   (instance_ip, intf_rec['name'])
-            self.logger.error(pstr)
-            print pstr
-            return oper
+    def check_flowtable(self):
+        sflows = list(); dflows=list()
+        for inspect in self.srcip_vertex.get_vrouters():
+            flow = inspect.get_matching_flows(self.source_ip, self.dest_ip,
+                                              self.protocol, self.source_port,
+                                              self.dest_port, ':'.join(self.src_vn_fqname),
+                                              ':'.join(self.dest_vn_fqname))
+            if flow:
+                sflows.extend(flow)
+                self.src_vrouter_h = inspect
+        for inspect in self.destip_vertex.get_vrouters():
+            flow = inspect.get_matching_flows(self.source_ip, self.dest_ip,
+                                              self.protocol, self.source_port,
+                                              self.dest_port, ':'.join(self.src_vn_fqname),
+                                              ':'.join(self.dest_vn_fqname))
+            if flow:
+                dflows.extend(flow)
+                self.dst_vrouter_h = inspect
 
-        # Get vrf from
-        vrf = intf_rec['vrf_name']
-        vrf_str = 'Snh_VrfListReq?'
-        search_str = ('x=%s') % (vrf)
-        ivrfobj = Introspect(url= base_url + vrf_str + search_str)
-        vrfobj = ivrfobj.get()
-        if vrfobj['VrfListResp']['vrf_list']:
-            ucindex = vrfobj['VrfListResp']['vrf_list'][0]['ucindex']
-        else:
-            self.logger.error("Agent Error, fip vrf not found")
-            return oper
+        for flow in sflows:
+            print 'sg_action', flow['sg_action_summary'][0]['action']
+            print 'action_str', flow['action_str'][0]['action']
+            print 'action', flow['action']
+        for flow in dflows:
+            print 'sg_action', flow['sg_action_summary'][0]['action']
+            print 'action_str', flow['action_str'][0]['action']
+            print 'action', flow['action']
 
-        # Get routing entry
-        route_str = 'Snh_Inet4UcRouteReq?'
-        search_str = ('vrf_index=%s&src_ip=%s&prefix_len=32') % \
-                     (ucindex, ip_address)
-        routeobj = Introspect(url = base_url + route_str + search_str).get()
-        route_rec = routeobj['Inet4UcRouteResp']['route_list'][0]
-        host_oper['route'] = route_rec
-        if route_rec:
-            nh_list = route_rec['path_list']
-            if nh_list:
-                print "Agent got nh for %s" % (ip_address)
-        else:
-            print "Agent Error doesn't have route for %s" % (ip_address)
-        return oper
+    def check_dropstats(self):
+        initial = self.src_vrouter_h.get_dropstats()
+        diffset = list()
+        for i in range(2):
+            time.sleep(5)
+            current = self.src_vrouter_h.get_dropstats()
+            diffset.append({key:current[key]
+                           for key in DictDiffer(current, initial).changed()})
+        print initial
+        for diff in diffset:
+            print diff
 
+    def get_context(self):
+        return self.context
 
+    def get_vertex(self):
+        return self.vertexes
+
+    def get_dependent_vertices(self):
+        return []
 
 def parse_args(args):
     parser = ArgumentParser(description='Debug utility for Flow', add_help=True)
@@ -132,13 +122,12 @@ if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
     vFlow= debugVertexFlow(**args)
 
-    context = vFlow.get_context()
     #vertexPrint(context, detail=args.detail)
-    vP = vertexPrint(context)
+    vP = vertexPrint(vFlow)
     #vP._visited_vertexes_brief(context)
     #vP.print_visited_nodes(context, detail=False)
     #vP.print_object_based_on_uuid( '9f838303-7d84-44c4-9aa3-b34a3e8e56b1',context, False)
     #vP.print_object_catalogue(context, False)
     #vP.print_visited_vertexes_inorder(context)
-    vP.convert_json(context)
+    vP.convert_json()
 

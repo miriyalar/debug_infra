@@ -288,7 +288,8 @@ class baseVertex(object):
         return ret
 
     def get_vrouters(self):
-        return self.vrouter.get_nodes()
+        for vrouter in self.vrouter.get_nodes():
+            yield self.vrouter.get_inspect_h(vrouter['ip_address'])
 
     def _add_agent_to_context(self, vertex, agent):
         vertex['agent'].update(agent)
@@ -299,7 +300,7 @@ class baseVertex(object):
     def _add_config_to_context(self, vertex, config):
         vertex['config'].update(config)
 
-    def get_attr(self, vertex, attr, service='config', subtype=None, hostname=None):
+    def get_attr(self, attr, vertex=None, service='config', subtype=None, hostname=None):
         '''
            Fetch value of the requested attribute from the vertex
            Possible services: config, control, agent, analytics
@@ -307,6 +308,7 @@ class baseVertex(object):
            attr can be hierarchy of '.' separated keys
            for eg: virtual_machine_interface_mac_addresses.mac_address.0
         '''
+        vertex = vertex or self.vertexes[0]
         vertex_type = vertex['vertex_type']
         obj = vertex[service]
         if service != 'config':
@@ -316,8 +318,13 @@ class baseVertex(object):
         for key in attr.split('.'):
             try:
                 d = d[key]
-            except (KeyError, TypeError):
-                break #Should we return None or until we had parsed
+            except KeyError:
+                break
+            except TypeError:
+                try:
+                    d = d[int(key)]
+                except IndexError:
+                    break #Should we return None or until we had parsed
         return d
 
 if __name__ == '__main__':
