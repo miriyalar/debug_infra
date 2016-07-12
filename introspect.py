@@ -184,6 +184,10 @@ class AgentIntrospect(Introspect):
         url_path = 'Snh_PageReq?x=begin:-1,end:-1,table:%s.uc.route.0'%vrf_fq_name
         return self.get(path=url_path)
 
+    def get_flows(self):
+        url_path = 'Snh_FetchAllFlowRecords?'
+        return self.get(path=url_path)
+
     def is_prefix_exists(self, vrf_fq_name, prefix, plen=32):
         routes = self.get_routes(vrf_fq_name)
         for route in routes['Inet4UcRouteResp']['route_list']:
@@ -198,6 +202,31 @@ class AgentIntrospect(Introspect):
                                                         route['src_plen'])):
                return True
         return False
+
+    def get_matching_flows(self, src_ip=None, dst_ip=None, protocol=None,
+                           src_port=None, dst_port=None, src_vn=None,
+                           dst_vn=None):
+        flows = list()
+        for flow in self.get_flows()['flow_list']:
+            if src_ip and src_ip != flow['sip']:
+                continue
+            if dst_ip and dst_ip != flow['dip']:
+                continue
+            if protocol and protocol != flow['protocol']:
+                continue
+            if src_port and src_port != flow['src_port']:
+                continue
+            if dst_port and dst_port != flow['dst_port']:
+                continue
+            if src_vn and src_vn not in flow['src_vn_match']:
+                continue
+            if dst_vn and dst_vn not in flow['dst_vn_match']:
+                continue
+            flows.append(flow)
+        return flows
+
+    def get_dropstats(self):
+        return self.get('Snh_KDropStatsReq?')
 
     def verify(self, verify_list=None):
         for v in verify_list or []:
