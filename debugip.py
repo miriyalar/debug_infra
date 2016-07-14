@@ -9,7 +9,10 @@ class debugVertexIP(baseVertex):
 
     def __init__(self, context=None, **kwargs):
         self.instance_ip_address = kwargs.get('instance_ip_address', None)
-        self.match_kv = {'instance_ip_address': self.instance_ip_address}
+        self.virtual_network = kwargs.get('virtual_network', None)
+        self.uuid = kwargs.get('uuid', None)
+        self.match_kv = {'instance_ip_address': self.instance_ip_address, 'virtual_network_refs.uuid': self.virtual_network,
+                         'uuid': self.uuid}
         super(debugVertexIP, self).__init__(context=context, **kwargs)
 
     def get_schema(self):
@@ -27,7 +30,7 @@ class debugVertexIP(baseVertex):
     def process_self(self, vertex):
         vertex_type = vertex['vertex_type']
         if not self.instance_ip_address:
-            self.instance_ip_address = self.get_attr(vertex, 'instance_ip_address')
+            self.instance_ip_address = self.get_attr('instance_ip_address', vertex)
 
         # Agent
         agent = {}
@@ -85,6 +88,7 @@ class debugVertexIP(baseVertex):
 def parse_args(args):
     parser = ArgumentParser(description='Debug utility for IIP', add_help=True)
     parser.add_argument('--instance_ip_address', help='Instance ip address to debug')
+    parser.add_argument('--virtual_network', help='Virtual network uuid')
     return parser.parse_args(args)
 
 if __name__ == '__main__':
