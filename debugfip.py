@@ -48,7 +48,7 @@ class debugVertexFIP(baseVertex):
                               (vertex['vertex_type'], vertex['uuid']))
             return oper
         intf_details = inspect_h.get_intf_details(vmi_id=vmi_uuid)
-        intf_rec = url_dict_resp['ItfResp']['itf_list'][0]
+        intf_rec = intf_details['ItfResp']['itf_list'][0]
         oper['interface'] = intf_rec
 
         match = False

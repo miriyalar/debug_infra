@@ -35,10 +35,12 @@ class baseFlowVertex(object):
         else:
             self.context = context
         self.vertex = create_vertex(self.vertex_type,
-                                    srcip_dstip='_'.join([self.source_ip, self.dest_ip]))
+                                    flow_direction='  -->  '.join([self.source_ip, self.dest_ip]))
         self.srcip_vertex = debugVertexIP(instance_ip_address=self.source_ip,
+                                          virtual_network=self.source_vn,
                                           context=self.context, **kwargs)
         self.destip_vertex = debugVertexIP(instance_ip_address=self.dest_ip,
+                                           virtual_network=self.dest_vn,
                                            context=self.context, **kwargs)
         if not self.source_vrf:
             self.src_vn_fqname = self.srcip_vertex.get_attr('virtual_network_refs.0.to')
@@ -126,7 +128,7 @@ class baseFlowVertex(object):
         for vrouter in self.destip_vertex.get_vrouters():
             dropstats['dst_initial'][vrouter._ip] = vrouter.get_dropstats()
         for i in range(2):
-            #time.sleep(5)
+            time.sleep(5)
             for vrouter in self.srcip_vertex.get_vrouters():
                 current = vrouter.get_dropstats()
                 initial = dropstats['src_initial'][vrouter._ip]

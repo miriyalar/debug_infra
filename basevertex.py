@@ -122,7 +122,7 @@ class baseVertex(object):
                                                         config_ip=self.config_ip,
                                                         config_port=self.config_port,
                                                         context_path=self.context['path'],
-                                                        fq_name=obj[vertex_type]['fq_name'])
+                                                        fq_name=':'.join(obj[vertex_type]['fq_name']))
         self.vrouter = Vrouter(contrail_info['vrouter'])
 
     def get_context(self):
