@@ -98,11 +98,22 @@ class vertexPrint(object):
                 else:
                     pprint(item, indent = 2)
 
+    @staticmethod
+    def _merge_list_of_dicts(list1, list2):
+        list1.extend([x for x in list2 if x not in list1])
+
     def _get_objects_from_context(self, object_type=None):
         objs = {}
-        context = self.vertex.get_context()
-        objs['visited_vertexes'] = self._get_merged_vertex(self.vertex)
-        objs['summary_of_visited_vertexes'] = context['visited_vertexes_inorder']
+        visited_vertices = dict()
+        vv_in_order = list()
+        if type(self.vertex) is not list:
+            self.vertex = [self.vertex]
+        for vertex in self.vertex:
+            context = vertex.get_context()
+            self._merge_list_of_dicts(vv_in_order, context['visited_vertexes_inorder'])
+            Utils.merge_dict(visited_vertices, self._get_merged_vertex(vertex))
+        objs['visited_vertexes'] = visited_vertices
+        objs['summary_of_visited_vertexes'] = vv_in_order
         return objs
 
     def convert_json(self, object_type=None, detail=True, file_name='debug_vertexes_output.json'):

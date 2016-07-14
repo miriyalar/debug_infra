@@ -38,14 +38,29 @@ def create_global_context(**kwargs):
     gcontext['depth'] = kwargs.get('depth', -1)
     return gcontext
 
+def get_logger(name, **kwargs):
+    verbose = kwargs.get('verbose', None)
+    loglevel = logging.DEBUG if verbose else logging.INFO
+    return logger(logger_name=name, file_level=loglevel).get_logger()
+
+def create_vertex(vertex_type, **kwargs):
+    vertex = defaultdict(dict)
+    vertex.update({
+        'vertex_type': vertex_type,
+        'config': {},
+        'agent' : defaultdict(dict),
+        'control': defaultdict(dict),
+        'analytics': {'uve':{}},
+    })
+    for k,v in kwargs.iteritems():
+        vertex.update({k: v})
+    return vertex
+
 class baseVertex(object):
     '''Abstract Base Class for Vertex'''
     __metaclass__ = ABCMeta
     def __init__(self, context=None, **kwargs):
-        verbose = kwargs.get('verbose', None)
-        loglevel = logging.DEBUG if verbose else logging.INFO
-        self.logger = logger(logger_name=self.get_class_name(),
-                             file_level=loglevel).get_logger()
+        self.logger = get_logger(name=self.get_class_name(), **kwargs)
         self.config = None
         self.control = None
         self.analytics = None
@@ -124,9 +139,9 @@ class baseVertex(object):
         for obj in objs:
             uuid = obj[vertex_type]['uuid']
             fq_name = ':'.join(obj[vertex_type]['fq_name'])
+            self._set_contrail_vrouter_objs(vertex_type, obj)
             if self._is_visited_vertex(uuid):
                 continue
-            self._set_contrail_vrouter_objs(vertex_type, obj)
             vertex = self._store_vertex(vertex_type, uuid, obj)
             self._store_config(vertex, uuid, obj, self.config_objs)
             self._store_control_config(vertex, obj)
@@ -172,21 +187,9 @@ class baseVertex(object):
     def get_vertex(self):
         return self.vertexes
 
-    def _create_vertex(self, vertex_type, uuid, fq_name=None):
-        vertex = {
-            'uuid': uuid,
-            'fq_name': fq_name,
-            'vertex_type': vertex_type,
-            'config': {},
-            'agent' : defaultdict(dict),
-            'control': defaultdict(dict),
-            'analytics': {'uve':{}},
-        }
-        return vertex
-
     def _store_vertex(self, vertex_type, uuid, config_obj):
         fq_name = ':'.join(config_obj[vertex_type]['fq_name'])
-        vertex = self._create_vertex(vertex_type, uuid, fq_name)
+        vertex = create_vertex(vertex_type, uuid=uuid, fq_name=fq_name)
         self.vertexes.append(vertex)
         self.context['visited_vertexes'].append(uuid)
         #self.context['visited_nodes'][vertex_type + ', ' + fq_name] = vertex
@@ -308,7 +311,9 @@ class baseVertex(object):
            attr can be hierarchy of '.' separated keys
            for eg: virtual_machine_interface_mac_addresses.mac_address.0
         '''
-        vertex = vertex or self.vertexes[0]
+        vertex = vertex or (self.vertexes and self.vertexes[0])
+        if not vertex:
+            return None
         vertex_type = vertex['vertex_type']
         obj = vertex[service]
         if service != 'config':

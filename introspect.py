@@ -200,8 +200,8 @@ class AgentIntrospect(Introspect):
         for route in routes['Inet4UcRouteResp']['route_list']:
             if IPAddress(address) in IPNetwork('%s/%s'%(route['src_ip'],
                                                         route['src_plen'])):
-               return True
-        return False
+               return (True, route)
+        return (False, routes)
 
     def get_matching_flows(self, src_ip=None, dst_ip=None, protocol=None,
                            src_port=None, dst_port=None, src_vn=None,
