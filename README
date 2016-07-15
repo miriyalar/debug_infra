@@ -26,11 +26,13 @@ Usage:
    vp.convert_to_file_structure() --> for file structure output, default it will use the current dir (has an option to specify a path)
 
 Process of writing the code for new debugnode/debug vertex:
-Check debugsample.py vertex
-
+Check debugsample.py for creating config objects debugging
+Check debugflow.py for flows
+baseflowvertex.py and basevertex.py are base classes for flows and configuration objects
 
 Details about the Classes/Utilities:
 baseVertex class:
+baseVertexFlow class:
 Utils:
 Logger:
 
