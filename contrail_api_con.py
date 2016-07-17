@@ -3,7 +3,7 @@ import pdb
 import re
 import pprint
 import json
-from logger import logger
+import logger
 from utils import Utils
 from contrail_api_con_exception import ContrailApiConnectionException
 from contrail_con_enum import ContrailConError
@@ -18,7 +18,7 @@ except ImportError:
 
 class ContrailApiConnection:
     def  __init__(self, ip = None, port = None, headers = None):
-        self.log =  logger(logger_name=self.__class__.__name__).get_logger()
+        self.log =  logger.getLogger(logger_name=self.__class__.__name__)
         self.ip = ip
         self.port = port
 	if (ip == None or port == None):
