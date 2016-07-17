@@ -2,7 +2,7 @@
 import pdb
 import json
 import re
-from logger import logger
+import logger
 import ConfigParser
 import os.path
 from contrail_api_con import ContrailApiConnection
@@ -13,7 +13,7 @@ class ContrailKeystoneAuth:
         self._authn_user = admin_username
         self._authn_password = admin_password
         self._authn_tenant_name = admin_tenant_name
-        self.log = logger(logger_name='KeystoneAuth').get_logger()
+        self.log = logger.getLogger(logger_name='KeystoneAuth')
         self._keystone_con = ContrailApiConnection(ip=auth_ip, port=auth_port)
 
     def authenticate(self):

@@ -1,6 +1,6 @@
 #!/bin/python
 import pdb
-from logger import logger
+import logger
 import pprint
 import json
 import re
@@ -9,7 +9,7 @@ from contrail_api_con import ContrailApiConnection
 
 class ContrailUVE:
     def __init__(self, ip = "127.0.0.1", port = "8081", token=None):
-        self.log = logger(logger_name=self.__class__.__name__).get_logger()
+        self.log = logger.getLogger(logger_name=self.__class__.__name__)
         token_header = {'X-AUTH-TOKEN': token} if token else {}
         self._api_con = ContrailApiConnection(ip=ip, port=port,
                                               headers=token_header)

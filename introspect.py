@@ -2,7 +2,7 @@
 """Retrieve or Query an object from introspects"""
 
 import requests
-from logger import logger
+import logger
 from lxml import etree
 from netaddr import IPNetwork, IPAddress
 
@@ -100,7 +100,7 @@ class Introspect(object):
         self._ip = ip
         self._port = port
         self._headers = {'X-AUTH-TOKEN': auth} if auth else None
-        self.log = logger(logger_name=self.__class__.__name__).get_logger()
+        self.log = logger.getLogger(logger_name=self.__class__.__name__)
 
     def _mk_url_str(self, path=''):
         if path.startswith('http:'):

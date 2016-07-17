@@ -1,5 +1,5 @@
 import pdb
-from logger import logger
+import logger
 from introspect import Introspect
 from contrail_utils import ContrailUtils
 from utils import Utils
@@ -41,7 +41,7 @@ def create_global_context(**kwargs):
 def get_logger(name, **kwargs):
     verbose = kwargs.get('verbose', None)
     loglevel = logging.DEBUG if verbose else logging.INFO
-    return logger(logger_name=name, file_level=loglevel).get_logger()
+    return logger.getLogger(logger_name=name, console_level=loglevel)
 
 def create_vertex(vertex_type, **kwargs):
     vertex = defaultdict(dict)

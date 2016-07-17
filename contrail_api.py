@@ -3,7 +3,7 @@ import pdb
 import pprint
 import json
 import re
-from logger import logger
+import logger
 from urlparse import urlparse
 from contrail_api_con import ContrailApiConnection
 from contrail_api_con_exception import ContrailApiConnectionException
@@ -17,7 +17,7 @@ class ContrailApi:
     }
 
     def __init__(self, ip = "127.0.0.1", port = "8082", token=None):
-        self.log = logger(logger_name=self.__class__.__name__).get_logger()
+        self.log = logger.getLogger(logger_name=self.__class__.__name__)
         self._ip = ip
         self._port = port
         token_header = {'X-AUTH-TOKEN': token} if token else {}
