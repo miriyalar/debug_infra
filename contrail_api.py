@@ -238,7 +238,7 @@ class ContrailApi:
         ret_list = []
         ret_dict = {}
         object_names =  object_name + "s"
-        url = ("%s") % (object_names)
+        url = ("%s?detail=True") % (object_names)
 
 	#Cut there a get object quick
         filters_list = filters.split(',')
