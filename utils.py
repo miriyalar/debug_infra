@@ -1,4 +1,5 @@
 import os
+import json
 
 class Utils():
     def convert_unicode():
@@ -35,41 +36,41 @@ class Utils():
 
 
     @staticmethod
-    def dict_to_filesystem(d, cur_path='./', console=False):
+    def dict_to_filesystem(d, cur_path='./', console=False, depth=0):
         if isinstance(d, dict):
             for k, v in d.items():
                 v = d.get(k)
                 path = os.path.join(cur_path, k)
-                if isinstance(v, dict) or isinstance(v, list):
+                if (isinstance(v, dict) or isinstance(v, list)) and depth != 0 :
                     if not os.path.exists(path):
                         os.makedirs(path)
                     if console:
                         print path
-                    Utils.dict_to_filesystem(v, path)
+                    Utils.dict_to_filesystem(v, path, depth=depth-1)
                 else:
                     input_file = open(path, 'a')
-                    input_file.write(str(v))
+                    json.dump(v, input_file, indent=4)
                     input_file.close()
                     if console:
                         print path, v
         elif isinstance(d, list):
             for i, v in enumerate(d):
                 path = os.path.join(cur_path, str(i))
-                if isinstance(v, dict) or isinstance(v, list):
+                if (isinstance(v, dict) or isinstance(v, list)) and depth != 0:
                     if not os.path.exists(path):
                         os.makedirs(path)
                     if console:
                         print path
-                    Utils.dict_to_filesystem(v, path)
+                    Utils.dict_to_filesystem(v, path, depth=depth-1)
                 else:
                     input_file = open(path, 'a')
-                    input_file.write(str(v))
+                    json.dump(v, input_file, indent=4)
                     input_file.close()
                     if console:
                         print ' ' + v
         else:
             input_file = open(cur_path, 'a')
-            input_file.write(str(d))
+            json.dump(d, input_file, indent=4)
             input_file.close()
             if console:
                 print cur_path, d

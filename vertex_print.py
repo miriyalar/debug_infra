@@ -124,7 +124,8 @@ class vertexPrint(object):
 
     def convert_to_file_structure(self, object_type=None, cur_path='./', console_print=False):
         convert_dict = self._get_objects_from_context(object_type)
-        Utils.dict_to_filesystem(convert_dict, cur_path=cur_path, console=console_print)
+        Utils.dict_to_filesystem({'visited_vertexes':convert_dict['visited_vertexes']}, cur_path=cur_path, console=console_print, depth=3)
+        Utils.dict_to_filesystem({'summary_of_visited_vertexes':convert_dict['summary_of_visited_vertexes']}, cur_path=cur_path, console=console_print, depth=1)
 
     def _get_merged_vertex(self, vertex):
         vertex_dict = dict()
