@@ -30,10 +30,49 @@ Check debugsample.py for creating config objects debugging
 Check debugflow.py for flows
 baseflowvertex.py and basevertex.py are base classes for flows and configuration objects
 
-Details about the Classes/Utilities:
+High level details:
+
+Debugging of contrail system is not stright forward, as user needs to get to many components in the system for configuration and operational objects content/states.
+User has to go through multiple hops for config, control, analytics and agent to troubleshoot issues, and also sometimes need to login into the nodes to check
+the /var/log/contrail/<logs> to isolate issues.
+
+The intent of this project (debug_infra) is to create an infrastructure for writing debuging use cases, let us call it as debug vertex.
+These debug vertexes collects configuration objects from config/control/agent/analytics nodes, operational objects from control/agent nodes.
+Verfication of objects as part of debug vertexes will be added.
+
+Dependant vertexes can be specifed as part of the debug vertex code and infra code will invoke them automatically.
+It is extedable to add any number of debug vertexes for a given usecase. 
+Debug infra provides, show tech equalvalent for a use case will be collected, verfication of the data and potentially catch errors.
+
+This infrastructure starts with a debug<vertex> and works on dependant vertexes specified in that vertex. Infra maintains the visited vertexes (uuids)
+and skips those if it is already visited while processing. A context is maintained per use case, which has access to both vertex and dependant vertexes.
+
+User will have an option to provide depth of dependancies to visit, default is no limit on the depth.
+User will also have an option to create a file strucure of objects visisted and their details.
+
 baseVertex class:
+debug<vertexes> inherits baseVertex class, specifies the dependant vertexes to it.
+baseVertex object gets config/control/analytics/agents nodes per given config uuid of the node (ex: VN uuid, SG uuid, VMI uuid and etc..)
+baseVertex creates connection objects to those nodes and pulls configuration objects from all the above nodes automatically and stores in the vertex instance.
+debug<vertex> codes adds the operational db related information, which can't be obtained automatically and also implements the business logic related to that
+particular use case and also may perform verfication of data to report errors/warnings.
+
 baseVertexFlow class:
+Flow classes inherits this baseVertexFlow class, which takes four-tuple and VN as input and gathers flow related information from all relavant contrail nodes.
+
+introspect class:
+This class provides handler to introspect for given ip/port. This provides methods to convert introspect xml to python dict objects.
+
+contrail api class:
+This class provides handler to config nodes for given ip/port. Methods to get objects from config node with select and where clauses (fileds and filters)
+
+Analytics api class:
+This class provides handler to analytics node for given ip/port. Methods to get analytics objects with where and select clauses (fileds and filters)
+
 Utils:
+Utility functions
+
 Logger:
+Logging functions
 
 
