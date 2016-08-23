@@ -98,3 +98,4 @@ if __name__ == '__main__':
     #vP.print_object_catalogue(context, False)
     #vP.print_visited_vertexes_inorder(context)
     vP.convert_json()
+    vP.convert_to_file_structure()

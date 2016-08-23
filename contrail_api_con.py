@@ -45,7 +45,7 @@ class ContrailApiConnection:
         response.encoding = encoding
         return response.text
 
-    def get(self, url_path):
+    def get(self, url_path, ref=True):
         url = ("%s/%s") % (self.url, url_path)
         self.log.debug("url = %s" %url)
         try:
@@ -64,7 +64,10 @@ class ContrailApiConnection:
             raise ContrailApiConnectionException(pstr)
 
         json_data = json.loads(resp)
-        return Utils.convert_unicode(json_data)
+        tdict = Utils.convert_unicode(json_data)
+        if tdict and ref:
+            tdict['ref'] = url
+        return tdict 
 
     def post(self, url_path, post_data, headers=None):
         pstr = ("Making a post request to %s with %s") % (url_path, post_data)

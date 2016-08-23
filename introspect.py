@@ -115,7 +115,7 @@ class Introspect(object):
             self.log.error("Socket Connection error: %s", str(e))
             raise
 
-    def get(self, path=''):
+    def get(self, path='', ref=True):
         if path:
             response = self._load(self._mk_url_str(path))
         if response and response.status_code != 200:
@@ -124,7 +124,10 @@ class Introspect(object):
                                                      response.status_code))
         try:
             resp = etree.fromstring(response.text)
-            return EtreeToDict().get_all_entry(resp)
+            etodict = EtreeToDict().get_all_entry(resp)
+            if etodict and ref:
+               etodict['ref'] = self._mk_url_str(path) 
+            return etodict 
         except etree.XMLSyntaxError:
             return json.loads(response.text)
 
