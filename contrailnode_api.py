@@ -21,7 +21,12 @@ class AnalyticsNode:
             break
 
     def get_object(self, category='uve', object_type=None, object_name=None, select_fields=[]):
-        return self._analytics_api.get_object(object_name, object_type, select_fields)
+        dobj = {}
+        try:
+            dobj = self._analytics_api.get_object(object_name, object_type, select_fields)
+        except:
+            pass
+        return dobj
 
 class ConfigNode:
     def __init__(self, config_nodes, token=None):
