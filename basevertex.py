@@ -149,7 +149,7 @@ class baseVertex(object):
             self._store_agent_config(vertex, obj)
             self.process_self(vertex)
             if self.depth == 0:
-                return
+                continue
             self.context['depth'] = self.context['depth'] - 1
             self._process_dependants(vertex_type, uuid, fq_name, self.dependant_vertexes)
 

@@ -320,7 +320,7 @@ class ContrailApi:
         elif object_dict != None and depth != len(object_path_list):
             ret_list = []
             cur_object = object_path_list[depth]
-            obj = object_dict[object_dict.keys()[0]]
+            obj = object_dict[object_name]
             if cur_object in obj:
                 new_obj = obj[cur_object]
                 if type(new_obj) == list:
