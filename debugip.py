@@ -9,10 +9,14 @@ class debugVertexIP(baseVertex):
 
     def __init__(self, context=None, **kwargs):
         self.instance_ip_address = kwargs.get('instance_ip_address', None)
-        self.virtual_network = kwargs.get('virtual_network', None)
+        virtual_network = kwargs.get('virtual_network', None)
         self.uuid = kwargs.get('uuid', None)
-        self.match_kv = {'instance_ip_address': self.instance_ip_address, 'virtual_network_refs.uuid': self.virtual_network,
+        self.match_kv = {'instance_ip_address': self.instance_ip_address,
                          'uuid': self.uuid}
+        if virtual_network and ':' in virtual_network:
+            self.match_kv.update({'virtual_network_refs.to': virtual_network.split(':')})
+        else:
+            self.match_kv.update({'virtual_network_refs.uuid': virtual_network})
         super(debugVertexIP, self).__init__(context=context, **kwargs)
 
     def get_schema(self):

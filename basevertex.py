@@ -79,7 +79,9 @@ class baseVertex(object):
         self.depth = self.context.get('depth')
         self.element = kwargs.get('element', None)
         self.uuid = kwargs.get('uuid', None)
-        self.fq_name = kwargs.get('fq_name', None)
+        self.fq_name = kwargs.get('fqname', None)
+        if isinstance(self.fq_name, str):
+            self.fq_name = self.fq_name.split(':')
         self.display_name = kwargs.get('display_name', None)
         self.obj_type = kwargs.get('obj_type', None) or self.vertex_type
         self.token = self.context['token']
