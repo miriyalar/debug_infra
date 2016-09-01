@@ -2,6 +2,7 @@ import pdb
 import logger
 from introspect import Introspect
 from contrail_utils import ContrailUtils
+from cluster_status import ClusterStatus
 from utils import Utils
 from vertex_print import vertexPrint
 from collections import OrderedDict, defaultdict
@@ -79,13 +80,14 @@ class baseVertex(object):
         self.depth = self.context.get('depth')
         self.element = kwargs.get('element', None)
         self.uuid = kwargs.get('uuid', None)
-        self.fq_name = kwargs.get('fq_name', None)
+        self.fq_name = kwargs.get('fqname', None)
         self.display_name = kwargs.get('display_name', None)
         self.obj_type = kwargs.get('obj_type', None) or self.vertex_type
         self.token = self.context['token']
         if not self.token:
             self.logger.warn('Authentication failed: Unable to fetch token from keystone')
         self._set_contrail_control_objs(self.context)
+        
         self.schema = self.get_schema()
         if not self.element:
             if not hasattr(self, 'match_kv') or not any(self.match_kv.itervalues()):
@@ -103,6 +105,11 @@ class baseVertex(object):
     def get_schema(self, context, **kwargs):
         pass
 
+    def _cluster_status(self, context):
+        self.context['cluster_status'], self.context['host_status'], self.context['alarm_status'] = ClusterStatus(token=self.token, 
+                                                                                                                  config_ip=self.config_ip, 
+                                                                                                                  config_port=self.config_port).get()
+
     def _set_contrail_control_objs(self, context):
         self.config = context['contrail'].get('config', None)
         self.control = context['contrail'].get('control', None)
@@ -114,6 +121,7 @@ class baseVertex(object):
             self.context['contrail']['analytics'] = self.analytics = AnalyticsNode(contrail_control['analytics_nodes'], token=self.token)
             self.context['config_ip'] = self.config_ip
             self.context['config_port'] = self.config_port
+            self._cluster_status(context)
 
     def _set_contrail_vrouter_objs(self, vertex_type, obj):
         contrail_info = ContrailUtils(token=self.token).get_contrail_info(
@@ -127,6 +135,15 @@ class baseVertex(object):
 
     def get_context(self):
         return self.context
+
+    def get_cluster_status(self):
+        return self.context.get('cluster_status', None)
+
+    def get_cluster_alarm_status(self):
+        return self.context.get('alarm_status', None)
+
+    def get_cluster_host_status(self):
+        return self.context.get('host_status', None)
 
     def get_context_path(self):
         return self.context['path']

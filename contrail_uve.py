@@ -17,7 +17,7 @@ class ContrailUVE:
     def get_object_deep(self, object_name, obj_type, select_fields = []):
         pass
 
-    def get_object(self, object_name, obj_type, select_fields = []):
+    def get_object(self, object_name, obj_type, select_fields = [], found_error=True):
         uve_path = "analytics/uves/" + obj_type
         object_path = uve_path + "/" +  object_name + "?flat"
         obj = self._api_con.get(object_path)
@@ -34,14 +34,16 @@ class ContrailUVE:
                 if level in tmp_obj:
                     tmp_obj = tmp_obj[level]
                 else:
-                    pstr = 'Error: Object %s, %s not found, trying to get %s' % \
-                           (obj_type, object_name, level)
-                    print pstr
+                    if found_error:
+                        pstr = 'Error: Object %s, %s not found, trying to get %s' % \
+                               (obj_type, object_name, level)
+                        print pstr
                     not_found = True
                     break;
             if not_found == False:
                 ret_dict[element] = tmp_obj                    
 
+        ret_dict['ref'] = obj['ref']
         return ret_dict
 
 
