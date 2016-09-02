@@ -124,6 +124,7 @@ class vertexPrint(object):
     def convert_json(self, object_type=None, detail=True, file_name='debug_vertexes_output.json'):
         print_list = self._get_objects_from_context(object_type)
         print_list = Utils.remove_none(print_list)
+        print_list = Utils.remove_none(print_list)
         with open(file_name, 'w') as fp:
             json.dump(print_list, fp)
             fp.close()
