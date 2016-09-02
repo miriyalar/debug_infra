@@ -75,6 +75,22 @@ class Utils():
             if console:
                 print cur_path, d
 
+
+    @staticmethod
+    def remove_none(data):
+        if isinstance(data, dict):
+            return { k:Utils.remove_none(v) for k, v in data.items() if k and v is not None and v != {}}
+        elif isinstance(data, list):
+            return [Utils.remove_none(item) for item in data if item != [] and item != {} and item != '' and item != ""]
+        elif isinstance(data, tuple):
+            return tuple(Utils.remove_none(item) for item in data if item)
+        elif isinstance(data, set):
+            return {Utils.remove_none(item) for item in data if item}
+        else:
+            return data
+
+
+
 class DictDiffer(object):
     """
     Calculate the difference between two dictionaries as:
