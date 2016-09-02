@@ -209,8 +209,11 @@ class AgentIntrospect(Introspect):
     def get_matching_flows(self, src_ip=None, dst_ip=None, protocol=None,
                            src_port=None, dst_port=None, src_vn=None,
                            dst_vn=None):
-        flows = list()
-        for flow in self.get_flows()['flow_list']:
+        matched_flows = list()
+        flows = self.get_flows()
+        if not flows:
+            return matched_flows
+        for flow in flows['flow_list'] or []:
             if src_ip and src_ip != flow['sip']:
                 continue
             if dst_ip and dst_ip != flow['dip']:
@@ -225,8 +228,8 @@ class AgentIntrospect(Introspect):
                 continue
             if dst_vn and dst_vn not in flow['dst_vn_match']:
                 continue
-            flows.append(flow)
-        return flows
+            matched_flows.append(flow)
+        return matched_flows
 
     def get_dropstats(self):
         return self.get('Snh_KDropStatsReq?')

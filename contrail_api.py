@@ -178,32 +178,31 @@ class ContrailApi:
 
 
     def _get_obj_matching_with_fields(self, obj, field, depth=0):
+        ret_list = []
+        if obj is None:
+            return ret_list
         field_list = field.split('.')
-        if obj != None and depth != len(field_list):
-            ret_list = []
-            d_field = field_list[depth]
-            cur_field = d_field.split('==')[0]
-            if cur_field in obj:
-                new_obj = obj[cur_field]
-                if type(new_obj) == list:
-                    for element in new_obj:
-                        ret_objs = self._get_obj_matching_with_fields(element, 
-                                                                      field, 
-                                                                      depth=depth+1)
-                        ret_list = ret_list + ret_objs
-                    return ret_list
-                else:
-                    ret_objs = self._get_obj_matching_with_fields(new_obj,
-                                                                  field,
+        d_field = field_list[depth]
+        cur_field = d_field.split('==')[0]
+        if cur_field in obj:
+            new_obj = obj[cur_field]
+            if depth == len(field_list) - 1:
+                return [new_obj]
+            if type(new_obj) == list:
+                for element in new_obj:
+                    ret_objs = self._get_obj_matching_with_fields(element, 
+                                                                  field, 
                                                                   depth=depth+1)
                     ret_list = ret_list + ret_objs
-                    return ret_list
-                    #return [new_obj]
-            else:
                 return ret_list
-        elif obj != None and depth == len(field_list):
-            return [obj]
-
+            else:
+                ret_objs = self._get_obj_matching_with_fields(new_obj,
+                                                              field,
+                                                              depth=depth+1)
+                ret_list = ret_list + ret_objs
+                return ret_list
+        else:
+            return ret_list
 
     def _is_obj_matching_with_filters(self, obj, filters):
         filters_list = filters.split('&')
@@ -214,7 +213,7 @@ class ContrailApi:
             filtered_objs[filter_key] = self._get_obj_matching_with_fields(obj.values()[0], filter_key, depth=0)
             match = False
             for filtered_obj in filtered_objs[filter_key]:
-                if filter_value == filtered_obj:
+                if filter_value == str(filtered_obj):
                     match = True
             if not match:
                 return False
@@ -271,9 +270,6 @@ class ContrailApi:
                     ret_list.append(obj)
         ret_dict[object_names] = ret_list
         return ret_dict
-        
-        
-
 
     def get_object_deep(self, object_name, object_path_list_str = '',
                          object_dict = None, where = '',

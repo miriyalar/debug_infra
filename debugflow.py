@@ -14,6 +14,7 @@ class debugVertexFlow():
         self.protocol = protocol
         self.source_port = source_port
         self.dest_port = dest_port
+        self.context = context
         self.kwargs = kwargs
 
     def process(self):
@@ -24,6 +25,7 @@ class debugVertexFlow():
                                       protocol=self.protocol,
                                       source_port=self.source_port,
                                       dest_port=self.dest_port,
+                                      context = self.context,
                                       **self.kwargs)
         context = self.fwdflow.get_context()
         source_vrf = self.fwdflow.source_vrf
@@ -38,6 +40,10 @@ class debugVertexFlow():
                                       source_vrf=dest_vrf,
                                       dest_vrf=source_vrf,
                                       context=context, **self.kwargs)
+
+    def print_vertex(self):
+        vP = vertexPrint([vFlow.fwdflow, vFlow.revflow])
+        vP.convert_json()
 
 def parse_args(args):
     parser = ArgumentParser(description='Debug utility for Flow', add_help=True)
@@ -54,14 +60,11 @@ if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
     vFlow = debugVertexFlow(**args)
     vFlow.process()
-
+    vFlow.print_vertex()
     #context = vIIP.get_context()
     #vertexPrint(context, detail=args.detail)
-    vP = vertexPrint([vFlow.fwdflow, vFlow.revflow])
     #vP._visited_vertexes_brief(context)
     #vP.print_visited_nodes(context, detail=False)
     #vP.print_object_based_on_uuid( '9f838303-7d84-44c4-9aa3-b34a3e8e56b1',context, False)
     #vP.print_object_catalogue(context, False)
     #vP.print_visited_vertexes_inorder(context)
-    vP.convert_json()
-
