@@ -103,4 +103,4 @@ if __name__ == '__main__':
     #vP.print_object_based_on_uuid( '9f838303-7d84-44c4-9aa3-b34a3e8e56b1',context, False)
     #vP.print_object_catalogue(context, True)
     vP.convert_json()
-
+    vP.convert_to_file_structure(console_print=True)

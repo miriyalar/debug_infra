@@ -152,6 +152,16 @@ class baseFlowVertex(object):
         vertices = [self.srcip_vertex, self.destip_vertex]
         return vertices
 
+    def get_cluster_status(self):
+        return self.context.get('cluster_status', None)
+
+    def get_cluster_alarm_status(self):
+        return self.context.get('alarm_status', None)
+
+    def get_cluster_host_status(self):
+        return self.context.get('host_status', None)
+
+
 def parse_args(args):
     parser = ArgumentParser(description='Debug utility for Flow', add_help=True)
     parser.add_argument('--source_ip', help='Source IP of the flow', required=True)

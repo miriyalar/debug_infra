@@ -237,7 +237,7 @@ class ContrailApi:
         ret_list = []
         ret_dict = {}
         object_names =  object_name + "s"
-        url = ("%s") % (object_names)
+        url = ("%s?detail=True") % (object_names)
 
 	#Cut there a get object quick
         filters_list = filters.split(',')
@@ -316,6 +316,7 @@ class ContrailApi:
         elif object_dict != None and depth != len(object_path_list):
             ret_list = []
             cur_object = object_path_list[depth]
+            object_dict.pop('ref', None)
             obj = object_dict[object_dict.keys()[0]]
             if cur_object in obj:
                 new_obj = obj[cur_object]

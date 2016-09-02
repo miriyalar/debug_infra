@@ -1,6 +1,7 @@
 from pprint import pprint
 import json
 from utils import Utils
+from collections import OrderedDict
 
 class vertexPrint(object):
     context = None
@@ -102,9 +103,10 @@ class vertexPrint(object):
     def _merge_list_of_dicts(list1, list2):
         list1.extend([x for x in list2 if x not in list1])
 
+    
     def _get_objects_from_context(self, object_type=None):
-        objs = {}
-        visited_vertices = dict()
+        objs = OrderedDict()
+        visited_vertices = OrderedDict()
         vv_in_order = list()
         if type(self.vertex) is not list:
             self.vertex = [self.vertex]
@@ -112,22 +114,27 @@ class vertexPrint(object):
             context = vertex.get_context()
             self._merge_list_of_dicts(vv_in_order, context['visited_vertexes_inorder'])
             Utils.merge_dict(visited_vertices, self._get_merged_vertex(vertex))
-        objs['visited_vertexes'] = visited_vertices
         objs['summary_of_visited_vertexes'] = vv_in_order
+        objs['cluster_status'] = vertex.get_cluster_status()
+        objs['alarm_status'] = vertex.get_cluster_alarm_status()
+        objs['host_status'] = vertex.get_cluster_host_status()
+        objs['visited_vertexes'] = visited_vertices
         return objs
 
     def convert_json(self, object_type=None, detail=True, file_name='debug_vertexes_output.json'):
         print_list = self._get_objects_from_context(object_type)
+        #print_list = self.stripNone(print_list)
         with open(file_name, 'w') as fp:
             json.dump(print_list, fp)
             fp.close()
 
     def convert_to_file_structure(self, object_type=None, cur_path='./', console_print=False):
         convert_dict = self._get_objects_from_context(object_type)
-        Utils.dict_to_filesystem(convert_dict, cur_path=cur_path, console=console_print)
+        Utils.dict_to_filesystem({'visited_vertexes':convert_dict['visited_vertexes']}, cur_path=cur_path, console=console_print, depth=3)
+        Utils.dict_to_filesystem({'summary_of_visited_vertexes':convert_dict['summary_of_visited_vertexes']}, cur_path=cur_path, console=console_print, depth=1)
 
     def _get_merged_vertex(self, vertex):
-        vertex_dict = dict()
+        vertex_dict = OrderedDict()
         obj = vertex.get_vertex()
         if not obj:
             return None
