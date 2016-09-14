@@ -1,5 +1,6 @@
 import os
 import json
+from collections import OrderedDict
 
 class Utils():
     def convert_unicode():
@@ -74,6 +75,24 @@ class Utils():
             input_file.close()
             if console:
                 print cur_path, d
+
+
+    @staticmethod
+    def remove_none(data):
+        if isinstance(data, OrderedDict):
+            return OrderedDict([(k,Utils.remove_none(v)) for k, v in data.items() if k and v is not None and v != {}])
+        if isinstance(data, dict):
+            return {k:Utils.remove_none(v) for k, v in data.items() if k and v is not None and v != {}}
+        elif isinstance(data, list):
+            return [Utils.remove_none(item) for item in data if item != [] and item != {} and item != '' and item != ""]
+        elif isinstance(data, tuple):
+            return tuple(Utils.remove_none(item) for item in data if item)
+        elif isinstance(data, set):
+            return {Utils.remove_none(item) for item in data if item}
+        else:
+            return data
+
+
 
 class DictDiffer(object):
     """

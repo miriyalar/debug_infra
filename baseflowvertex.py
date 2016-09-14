@@ -30,15 +30,11 @@ class baseFlowVertex(object):
         self.protocol = kwargs.pop('protocol', None)
         self.source_port = kwargs.pop('source_port', None)
         self.dest_port = kwargs.pop('dest_port', None)
-        if not context:
-            self.context = create_global_context(**kwargs)
-        else:
-            self.context = context
-        self.vertex = create_vertex(self.vertex_type,
-                                    flow_direction='  -->  '.join([self.source_ip, self.dest_ip]))
+        self.context = context
         self.srcip_vertex = debugVertexIP(instance_ip_address=self.source_ip,
                                           virtual_network=self.source_vn,
                                           context=self.context, **kwargs)
+        self.context = self.srcip_vertex.get_context()
         self.destip_vertex = debugVertexIP(instance_ip_address=self.dest_ip,
                                            virtual_network=self.dest_vn,
                                            context=self.context, **kwargs)
@@ -59,6 +55,8 @@ class baseFlowVertex(object):
             self.dest_vrf = ':'.join(self.dest_vn_fqname+self.dest_vn_fqname[-1:])
         else:
             self.dest_vn_fqname = self.dest_vrf.split(':')[:-1]
+        self.vertex = create_vertex(self.vertex_type,
+                                    flow_direction='  -->  '.join([self.source_ip, self.dest_ip]))
         self.process_vertex()
 
     def process_vertex(self):

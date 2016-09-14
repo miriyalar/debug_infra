@@ -64,12 +64,15 @@ class ConfigNode:
                                                     where=where)
 
                 for dobj in dobjs:
+                    ref_value = dobj.pop('ref', None)
                     uuid_obj = dobj.values()[0]['uuid']
                     hostname = capi['hostname']
                     if uuid_obj not in objs:
                         objs[uuid_obj] = {}
                     if hostname not in objs[uuid_obj]:
                         objs[uuid_obj][hostname] = {}
+                    if ref_value:
+                        dobj['ref'] = ref_value
                     objs[uuid_obj][hostname].update(dobj)
             except:
                 pass
