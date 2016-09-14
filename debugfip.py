@@ -23,7 +23,7 @@ class debugVertexFIP(baseVertex):
     def process_self(self, vertex):
         # Update flaotingip address if doesnt exist
         if not self.floating_ip_address:
-            self.floating_ip_address = self.get_attr('floating_ip_address', vertex)
+            self.floating_ip_address = self.get_attr('floating_ip_address', vertex)[0]
         # Agent
         agent = {}
         agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex)

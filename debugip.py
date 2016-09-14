@@ -34,7 +34,7 @@ class debugVertexIP(baseVertex):
     def process_self(self, vertex):
         vertex_type = vertex['vertex_type']
         if not self.instance_ip_address:
-            self.instance_ip_address = self.get_attr('instance_ip_address', vertex)
+            self.instance_ip_address = self.get_attr('instance_ip_address', vertex)[0]
 
         # Agent
         agent = {}

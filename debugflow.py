@@ -27,7 +27,7 @@ class debugVertexFlow():
                                       dest_port=self.dest_port,
                                       context = self.context,
                                       **self.kwargs)
-        context = self.fwdflow.get_context()
+        self.context = self.fwdflow.get_context()
         source_vrf = self.fwdflow.source_vrf
         dest_vrf = self.fwdflow.dest_vrf
         self.revflow = baseFlowVertex(source_ip=self.dest_ip,
@@ -39,7 +39,8 @@ class debugVertexFlow():
                                       dest_port=self.source_port,
                                       source_vrf=dest_vrf,
                                       dest_vrf=source_vrf,
-                                      context=context, **self.kwargs)
+                                      context=self.context,
+                                      **self.kwargs)
 
     def print_vertex(self):
         vP = vertexPrint([vFlow.fwdflow, vFlow.revflow])
