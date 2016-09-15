@@ -15,7 +15,7 @@ class debugVertexFlowSrcIP(object):
                                   virtual_network=self.source_vn,
                                   **kwargs)
         self.context = ip_vertex.get_context()
-        for inspect in ip_vertex.get_vrouters():
+        for hostname, inspect in ip_vertex.get_vrouters():
             self.flows.extend(inspect.get_matching_flows(src_ip=self.source_ip,
                                   src_vn=self.source_vn))
         self.flow_vertices = list()

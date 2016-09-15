@@ -14,7 +14,7 @@ from parser import ArgumentParser
 from debugip import debugVertexIP
 from vertex_print import vertexPrint
 from utils import DictDiffer
-from basevertex import create_global_context, get_logger, create_vertex
+from basevertex import get_logger, create_vertex
 import time
 
 class baseFlowVertex(object):
@@ -30,33 +30,33 @@ class baseFlowVertex(object):
         self.protocol = kwargs.pop('protocol', None)
         self.source_port = kwargs.pop('source_port', None)
         self.dest_port = kwargs.pop('dest_port', None)
-        if not context:
-            self.context = create_global_context(**kwargs)
-        else:
-            self.context = context
-        self.vertex = create_vertex(self.vertex_type,
-                                    flow_direction='  -->  '.join([self.source_ip, self.dest_ip]))
+        self.context = context
         self.srcip_vertex = debugVertexIP(instance_ip_address=self.source_ip,
                                           virtual_network=self.source_vn,
                                           context=self.context, **kwargs)
+        self.context = self.srcip_vertex.get_context()
         self.destip_vertex = debugVertexIP(instance_ip_address=self.dest_ip,
                                            virtual_network=self.dest_vn,
                                            context=self.context, **kwargs)
         if not self.source_vrf:
-            self.src_vn_fqname = self.srcip_vertex.get_attr('virtual_network_refs.0.to')
-            if not self.src_vn_fqname:
+            resp = self.srcip_vertex.get_attr('virtual_network_refs.0.to')
+            if not resp:
                 raise Exception('Unable to fetch VN info from IP address')
+            self.src_vn_fqname = resp[0]
             self.source_vrf = ':'.join(self.src_vn_fqname+self.src_vn_fqname[-1:])
         else:
             self.src_vn_fqname = self.source_vrf.split(':')[:-1]
 
         if not self.dest_vrf:
-            self.dest_vn_fqname = self.destip_vertex.get_attr('virtual_network_refs.0.to')
-            if not self.src_vn_fqname:
+            resp = self.destip_vertex.get_attr('virtual_network_refs.0.to')
+            if not resp:
                 raise Exception('Unable to fetch VN info from IP address')
+            self.dest_vn_fqname = resp[0]
             self.dest_vrf = ':'.join(self.dest_vn_fqname+self.dest_vn_fqname[-1:])
         else:
             self.dest_vn_fqname = self.dest_vrf.split(':')[:-1]
+        self.vertex = create_vertex(self.vertex_type,
+                                    flow_direction='  -->  '.join([self.source_ip, self.dest_ip]))
         self.process_vertex()
 
     def process_vertex(self):
@@ -66,25 +66,25 @@ class baseFlowVertex(object):
 
     def check_routes(self):
         oper = defaultdict(dict)
-        for inspect in self.srcip_vertex.get_vrouters():
+        for hostname, inspect in self.srcip_vertex.get_vrouters():
             (check, route) = inspect.is_route_exists(self.source_vrf, self.dest_ip)
             if not check:
                 print 'route for destip %s doesnt exist in source vrf %s'%(self.dest_ip, self.source_vrf)
             print 'route exists for destip %s in source vrf %s'%(self.dest_ip, self.source_vrf)
-            oper['src_route'][inspect._ip] = route
+            oper['src_route'][hostname] = route
 
-        for inspect in self.destip_vertex.get_vrouters():
+        for hostname, inspect in self.destip_vertex.get_vrouters():
             (check, route) = inspect.is_route_exists(self.dest_vrf, self.source_ip)
             if not check:
                 print 'route for srcip %s doesnt exist in dest vrf %s'%(self.source_ip, self.dest_vrf)
             print 'route exists for srcip %s in dest vrf %s'%(self.source_ip, self.dest_vrf)
-            oper['dst_route'][inspect._ip] = route
+            oper['dst_route'][hostname] = route
         self.vertex['agent']['oper'].update(oper)
 
     def check_flowtable(self):
         sflows = list(); dflows=list()
         oper = defaultdict(dict)
-        for inspect in self.srcip_vertex.get_vrouters():
+        for hostname, inspect in self.srcip_vertex.get_vrouters():
             flow = inspect.get_matching_flows(self.source_ip, self.dest_ip,
                                               self.protocol, self.source_port,
                                               self.dest_port, ':'.join(self.src_vn_fqname),
@@ -94,9 +94,9 @@ class baseFlowVertex(object):
                 sflows.extend(flow)
             else:
                 print 'Unable to find matching flow on src agent %s'%inspect._ip
-            oper['src_flow'][inspect._ip] = flow
+            oper['src_flow'][hostname] = flow
 
-        for inspect in self.destip_vertex.get_vrouters():
+        for hostname, inspect in self.destip_vertex.get_vrouters():
             flow = inspect.get_matching_flows(self.source_ip, self.dest_ip,
                                               self.protocol, self.source_port,
                                               self.dest_port, ':'.join(self.src_vn_fqname),
@@ -106,7 +106,7 @@ class baseFlowVertex(object):
                 dflows.extend(flow)
             else:
                 print 'Unable to find matching flow on dest agent %s'%inspect._ip
-            oper['dst_flow'][inspect._ip] = flow
+            oper['dst_flow'][hostname] = flow
 
         self.vertex['agent']['oper'].update(oper)
         for flow in sflows:
@@ -123,20 +123,20 @@ class baseFlowVertex(object):
     def check_dropstats(self):
         oper = defaultdict(dict)
         dropstats = defaultdict(dict)
-        for vrouter in self.srcip_vertex.get_vrouters():
-            dropstats['src_initial'][vrouter._ip] = vrouter.get_dropstats()
-        for vrouter in self.destip_vertex.get_vrouters():
-            dropstats['dst_initial'][vrouter._ip] = vrouter.get_dropstats()
+        for hostname, vrouter in self.srcip_vertex.get_vrouters():
+            dropstats['src_initial'][hostname] = vrouter.get_dropstats()
+        for hostname, vrouter in self.destip_vertex.get_vrouters():
+            dropstats['dst_initial'][hostname] = vrouter.get_dropstats()
         for i in range(2):
             time.sleep(5)
-            for vrouter in self.srcip_vertex.get_vrouters():
+            for hostname, vrouter in self.srcip_vertex.get_vrouters():
                 current = vrouter.get_dropstats()
-                initial = dropstats['src_initial'][vrouter._ip]
+                initial = dropstats['src_initial'][hostname]
                 dropstats['src_diff_'+str(i)] = {key:current[key]
                           for key in DictDiffer(current, initial).changed()}
-            for vrouter in self.destip_vertex.get_vrouters():
+            for hostname, vrouter in self.destip_vertex.get_vrouters():
                 current = vrouter.get_dropstats()
-                initial = dropstats['dst_initial'][vrouter._ip]
+                initial = dropstats['dst_initial'][hostname]
                 dropstats['dst_diff_'+str(i)] = {key:current[key]
                           for key in DictDiffer(current, initial).changed()}
         oper['dropstats'] = dropstats

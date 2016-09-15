@@ -67,7 +67,7 @@ if __name__ == '__main__':
     vSG= debugVertexSG(**args)
     #context = vSG.get_context()
     #vertexPrint(context, detail=args.detail)
-    vP = vertexPrint(context)
+    vP = vertexPrint(vSG)
     #vP._visited_vertexes_brief(context)
     #vP.print_visited_nodes(context, detail=False)
     #vP.print_object_catalogue(context, False)

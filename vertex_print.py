@@ -63,7 +63,7 @@ class vertexPrint(object):
                 pprint(v, indent = 2)
             #Print the service specific data
             #pprint(v[agent])
- 
+
 
     def print_visited_vertexes_inorder(self, context):
         print 'print_visited_vertexes_inorder'
@@ -75,7 +75,7 @@ class vertexPrint(object):
                     print('  {}'.format('%s'%(vertex[f])))
                 else:
                     print('      {}'.format('%s : %s'%(f, vertex[f])))
- 
+
     def print_object_based_on_uuid(self, uuid, context, detail = False):
         print 'print_object_based_on_uuid'
         visited_vertexes = context.get('visited_vertexes', [])
@@ -86,7 +86,7 @@ class vertexPrint(object):
                 self._print_config_brief(visited_vertexes[uuid], [] )
             else:
                 pprint(visited_vertexes[uuid], indent = 2)
-                
+
 
     def print_object_catalogue(self, detail):
         print 'print_object_catalogue'
@@ -103,7 +103,7 @@ class vertexPrint(object):
     def _merge_list_of_dicts(list1, list2):
         list1.extend([x for x in list2 if x not in list1])
 
-    
+
     def _get_objects_from_context(self, object_type=None):
         objs = OrderedDict()
         visited_vertices = OrderedDict()
@@ -112,12 +112,12 @@ class vertexPrint(object):
             self.vertex = [self.vertex]
         for vertex in self.vertex:
             context = vertex.get_context()
-            self._merge_list_of_dicts(vv_in_order, context['visited_vertexes_inorder'])
+            self._merge_list_of_dicts(vv_in_order, context.get_visited_vertices())
             Utils.merge_dict(visited_vertices, self._get_merged_vertex(vertex))
         objs['summary_of_visited_vertexes'] = vv_in_order
-        objs['cluster_status'] = vertex.get_cluster_status()
-        objs['alarm_status'] = vertex.get_cluster_alarm_status()
-        objs['host_status'] = vertex.get_cluster_host_status()
+        objs['cluster_status'] = context.get_cluster_status()
+        objs['alarm_status'] = context.get_cluster_alarm_status()
+        objs['host_status'] = context.get_cluster_host_status()
         objs['visited_vertexes'] = visited_vertices
         return objs
 
@@ -131,8 +131,11 @@ class vertexPrint(object):
 
     def convert_to_file_structure(self, object_type=None, cur_path='./', console_print=False):
         convert_dict = self._get_objects_from_context(object_type)
-        Utils.dict_to_filesystem({'visited_vertexes':convert_dict['visited_vertexes']}, cur_path=cur_path, console=console_print, depth=3)
-        Utils.dict_to_filesystem({'summary_of_visited_vertexes':convert_dict['summary_of_visited_vertexes']}, cur_path=cur_path, console=console_print, depth=1)
+        Utils.dict_to_filesystem({'visited_vertexes':convert_dict['visited_vertexes']},
+                                 cur_path=cur_path,
+                                 console=console_print, depth=3)
+        Utils.dict_to_filesystem({'summary_of_visited_vertexes': convert_dict['summary_of_visited_vertexes']},
+                                 cur_path=cur_path, console=console_print, depth=1)
 
     def _get_merged_vertex(self, vertex):
         vertex_dict = OrderedDict()
@@ -147,8 +150,8 @@ class vertexPrint(object):
 if __name__ == "__main__":
     import pdb;pdb.set_trace()
     print 'in Main'
-    vP = vertexPrint(test_context)   
-    vP._visited_vertexes_brief(test_context) 
+    vP = vertexPrint(test_context)
+    vP._visited_vertexes_brief(test_context)
     vP.print_visited_nodes(test_context, [],False)
     vP.print_object_based_on_uuid( '9f838303-7d84-44c4-9aa3-b34a3e8e56b1',test_context, False)
     vP.print_object_catalogue(test_context, False)

@@ -146,37 +146,6 @@ class ContrailApi:
                 translation_list.append(obj_dict)
         return translation_list 
 
-    def get_object_deep_multiple_select(self, object_name,
-                                        object_path_list = [],
-                                        where = ''):
-        """
-        Return a list of objects mentioned in the objecat_path_list,
-        Which are in turn accessible from the object_name,
-        matching the where field.
-
-        Keyword arguments:
-        object_name -- object from which the walk would begin.
-        object_path_list -- A list of path from the object to be walked separated by .             
-        where -- A match criteria based upon which the object to be walked is selected upon.
-
-        return:
-        A list of objects          
-        """
-
-
-        ret_list = []
-        for object_path in object_path_list:
-            select_list = self.get_object_deep(object_name, 
-                                    object_path,
-                                    object_dict = None,
-                                    where = where,
-                                    detail = True,
-                                    de_ref = True, strip_obj_name = False)
-
-            ret_list.append(select_list)
-        return ret_list
-
-
     def _get_obj_matching_with_fields(self, obj, field, depth=0):
         ret_list = []
         if obj is None:
@@ -288,6 +257,14 @@ class ContrailApi:
         return:
         A list of objects          
         """
+        if isinstance(object_path_list_str, list):
+            ret_list = []
+            for object_path in object_path_list_str:
+                objs = self.get_object_deep(object_name, object_path,
+                                            object_dict, where, detail,
+                                            de_ref, strip_obj_name, depth)
+                ret_list.extend(objs)
+            return ret_list
         if object_path_list_str != None and object_path_list_str != '':
             object_path_list = object_path_list_str.split('.')
         else:
