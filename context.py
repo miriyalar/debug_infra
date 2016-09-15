@@ -80,10 +80,10 @@ class Context(object):
         return self.status['cluster_status']
 
     def get_cluster_alarm_status(self):
-        return self.status['host_status']
+        return self.status['alarm_status']
 
     def get_cluster_host_status(self):
-        return self.status['alarm_status']
+        return self.status['host_status']
 
     def get_path(self):
         return self.path
