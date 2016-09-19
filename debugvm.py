@@ -13,6 +13,9 @@ class debugVertexVM(baseVertex):
                 "virtual-machine-interface": {
                     'uuid': 'virtual_machine_refs',
                     'display_name': 'virtual_machine_refs',
+                },
+                "service-instance": {
+                    'uuid': 'virtual_machine_back_refs'
                 }
         }
         return schema_dict

@@ -37,7 +37,7 @@ class debugVertexFIP(baseVertex):
         oper = {}
         vmi_uuid = None
         adjacency_type='virtual-machine-interface'
-        adjacency_list = inspect_h.get_adjacencies(uuid=vertex['uuid'],
+        adjacency_list = inspect_h.get_adjacencies(uuid=vertex['fq_name'],
                                                    adjacency_type=adjacency_type)
         for adjacency in adjacency_list:
             if adjacency[0] == adjacency_type:

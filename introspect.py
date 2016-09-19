@@ -5,6 +5,7 @@ import requests
 import logger
 from lxml import etree
 from netaddr import IPNetwork, IPAddress
+import json
 
 class EtreeToDict(object):
 
@@ -116,8 +117,7 @@ class Introspect(object):
             raise
 
     def get(self, path='', ref=True):
-        if path:
-            response = self._load(self._mk_url_str(path))
+        response = self._load(self._mk_url_str(path))
         if response and response.status_code != 200:
             raise RuntimeError('Retrieve URL (%s) failed with'
                                ' status code (%s)' %(self._mk_url_str(path),
@@ -129,7 +129,37 @@ class Introspect(object):
                etodict['ref'] = self._mk_url_str(path) 
             return etodict 
         except etree.XMLSyntaxError:
-            return json.loads(response.text)
+            try:
+                return json.loads(response.text)
+            except ValueError:
+                return response.text
+
+    def is_service_up(self):
+        try:
+            response = self.get()
+            return True
+        except requests.ConnectionError:
+            return False
+
+class SchemaIntrospect(Introspect):
+    def get_service_chains(self, sc_name='', vn_list=None):
+        url_path = 'Snh_ServiceChainList?sc_name=%s'%('')#sc_name #WA till ST introspect bug is fixed
+        response = self.get(url_path)
+        service_chains = list()
+        if not response or not response.get('service_chains'):
+            return []
+        for service_chain in response['service_chains']:
+            if sc_name:
+                if service_chain['sc_name'] == sc_name:
+                    service_chains.append(service_chain)
+                    break
+            elif vn_list:
+                left_vn = service_chain['left_virtual_network']
+                right_vn = service_chain['right_virtual_network']
+                if set(vn_list) - set((left_vn, right_vn)):
+                    continue
+                service_chains.append(service_chain)
+        return service_chains
 
 class ControllerIntrospect(Introspect):
     def get_config(self, fq_name_str='', node_type=''):
