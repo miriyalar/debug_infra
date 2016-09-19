@@ -9,6 +9,7 @@ class debugVertexIP(baseVertex):
 
     def __init__(self, context=None, **kwargs):
         self.instance_ip_address = kwargs.get('instance_ip_address', None)
+        self.ip_addr = dict()
         virtual_network = kwargs.get('virtual_network', None)
         self.uuid = kwargs.get('uuid', None)
         self.match_kv = {'instance_ip_address': self.instance_ip_address,
@@ -34,7 +35,10 @@ class debugVertexIP(baseVertex):
     def process_self(self, vertex):
         vertex_type = vertex['vertex_type']
         if not self.instance_ip_address:
-            self.instance_ip_address = self.get_attr('instance_ip_address', vertex)[0]
+            instance_ip_address = self.get_attr('instance_ip_address', vertex)[0]
+        else:
+            instance_ip_address = self.instance_ip_address
+        self.ip_addr[vertex['uuid']] = instance_ip_address
 
         # Agent
         agent = {}
@@ -47,10 +51,11 @@ class debugVertexIP(baseVertex):
 
     def _get_agent_oper_db(self, inspect_h, vertex):
         oper = {}
+        instance_ip_address = self.ip_addr[vertex['uuid']]
         # Need to get the virtual-machine-interface record from the agent
         vmi_uuid = None
         adjacency_type='virtual-machine-interface'
-        adjacency_list = inspect_h.get_adjacencies(uuid=vertex['uuid'],
+        adjacency_list = inspect_h.get_adjacencies(uuid=vertex['fq_name'],
                                                    adjacency_type=adjacency_type)
         for adjacency in adjacency_list:
             if adjacency[0] == adjacency_type:
@@ -64,29 +69,30 @@ class debugVertexIP(baseVertex):
         intf_rec = intf_details['ItfResp']['itf_list'][0]
         oper['interface'] = intf_rec
 
-        ip_address = oper['interface']['ip_addr']
-        if ip_address == self.instance_ip_address:
+        ip_address = [oper['interface']['ip_addr']]
+        ip_address.extend(oper['interface']['fixed_ip4_list'])
+        if instance_ip_address in ip_address:
             pstr = "IP address %s is found in the interface rec %s" % \
-                   (self.instance_ip_address, intf_rec['name'])
+                   (instance_ip_address, intf_rec['name'])
             self.logger.info(pstr)
             print pstr
         else:
             pstr = "IP address %s is NOT found in the interface rec %s" % \
-                   (self.instance_ip_address, intf_rec['name'])
+                   (instance_ip_address, intf_rec['name'])
             self.logger.error(pstr)
             print pstr
             return oper
 
         # Get routing entry
         (check, route) = inspect_h.is_prefix_exists(intf_rec['vrf_name'],
-                                                    prefix=ip_address)
+                                                    prefix=instance_ip_address)
         oper['route'] = route
         if check is True:
             nh_list = route['path_list']
             if nh_list:
-                print "Agent got nh for %s" % (ip_address)
+                print "Agent got nh for %s" % (instance_ip_address)
         else:
-            print "Agent Error doesn't have route for %s" % (ip_address)
+            print "Agent Error doesn't have route for %s" % (instance_ip_address)
         return oper
 
 def parse_args(args):

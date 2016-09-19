@@ -1,4 +1,4 @@
-from introspect import ControllerIntrospect, AgentIntrospect
+from introspect import ControllerIntrospect, AgentIntrospect, SchemaIntrospect
 from contrail_api import ContrailApi
 from contrail_uve import ContrailUVE
 
@@ -79,12 +79,13 @@ class ConfigNode:
         return dobjs, objs
 
 class IntrospectNode(object):
-    def __init__(self, nodes, _cls):
+    def __init__(self, nodes, _cls, port=None):
         self.nodes = nodes
         self.handles = dict()
         for node in self.nodes:
+            port = port or node.get('sandesh_http_port')
             self.handles[node['ip_address']] = _cls(ip=node['ip_address'],
-                                                    port=node['sandesh_http_port'])
+                                                    port=port)
     def get_nodes(self):
         return self.nodes
 
@@ -98,6 +99,24 @@ class Vrouter(IntrospectNode):
 class ControlNode(IntrospectNode):
     def __init__(self, control_nodes):
         super(ControlNode, self).__init__(control_nodes, ControllerIntrospect)
+
+class SchemaNode(IntrospectNode):
+    def __init__(self, config_nodes):
+        super(SchemaNode, self).__init__(config_nodes, SchemaIntrospect, port=8087)
+        for node in config_nodes:
+            inspect = super(SchemaNode, self).get_inspect_h(node['ip_address'])
+            if not inspect.is_service_up():
+                self.handles.pop(node['ip_address'], None)
+            else:
+                self.node = node
+        if len(self.handles) == 0:
+            print 'Schema Transformer is down'
+        elif len(self.handles) > 1:
+            print 'Multiple active Schema transformer processes'
+        self.active_st = self.handles.values()[0] if self.handles else None
+
+    def get_inspect_h(self):
+        return self.active_st
 
 '''
 class IntrospectNode:

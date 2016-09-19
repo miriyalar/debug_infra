@@ -34,6 +34,9 @@ class debugVertexVMI(baseVertex):
                 'instance-ip': {
                     'uuid': 'virtual_machine_interface_refs'
                 },
+                'service-instance': {
+                    'uuid': 'port_tuples.virtual_machine_interface_back_refs'
+                },
         }
         return schema_dict
 

@@ -202,7 +202,7 @@ class ContrailApi:
         return:
         A list of objects          
         """
-        _quick_list = ['uuid']
+        _quick_list = ['uuid', 'fq_name']
         ret_list = []
         ret_dict = {}
         object_names =  object_name + "s"
@@ -210,14 +210,28 @@ class ContrailApi:
 
 	#Cut there a get object quick
         filters_list = filters.split(',')
-        for filter_obj in filters_list:
+        for filter_obj in list(filters_list):
             filter_tmp = filter_obj.split('=')
-            if filter_tmp[0] in _quick_list:
+            if filter_tmp[0] == 'fq_name':
+                fqname = filter_tmp[1]
+                if isinstance(fqname, (str, unicode)):
+                    fqname = fqname.split(':')
+                fqname_dict = {'type': object_name,
+                               'fq_name': fqname}
+                resp = self._api_con.post_json('fqname-to-id', fqname_dict)
+                uuid = resp.get('uuid') if resp else None
+                if not uuid:
+                    raise Exception('Unable to find uuid of fqname %s'%fqname_dict)
+                filter_tmp[0] = 'uuid'
+                filter_tmp[1] = uuid
+            if filter_tmp[0] == 'uuid':
                 new_url = '%s/%s' % (object_name, filter_tmp[1])		
 		obj = self._api_con.get(new_url)
-		ret_dict[object_names] = [obj]
-		return ret_dict
-
+                ret_list.append(obj)
+                filters_list.remove(filter_obj)
+        if not filters_list:
+            ret_dict[object_names] = ret_list
+            return ret_dict
 
         objs = self._api_con.get(url)
         if not object_names in objs and \
@@ -271,7 +285,6 @@ class ContrailApi:
             object_path_list = []
         object_path_list.insert(0, object_name) 
         if depth == 0 and object_dict == None:
-
             object_name = object_path_list[depth]
             objs = self.get_object_with_filters(object_name, where)
             object_names =  object_name + "s"

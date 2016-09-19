@@ -11,7 +11,9 @@ class ContrailUtils(object):
             'floating-ip': 'virtual_machine_interface_refs.virtual_machine_refs',
             'security-group' : 'virtual_machine_interface_back_refs.virtual_machine_refs',
             'virtual-machine-interface': 'virtual_machine_refs',
-            'instance-ip': 'virtual_machine_interface_refs.virtual_machine_refs'
+            'instance-ip': 'virtual_machine_interface_refs.virtual_machine_refs',
+            'service-instance': ['virtual_machine_back_refs',
+                                 'port_tuples.virtual_machine_interface_back_refs.virtual_machine_refs']
         }
 
     @staticmethod
@@ -42,16 +44,6 @@ class ContrailUtils(object):
         return False 
 
     def get_contrail_info(self, uuid, uuid_type, config_ip='127.0.0.1', config_port='8082', **kwargs):
-        _agent_schema_dict = {
-            'virtual-network' : 'virtual_machine_interface_back_refs.virtual_machine_refs',
-            'floating-ip': 'virtual_machine_interface_refs.virtual_machine_refs',
-            'security-group' : 'virtual_machine_interface_back_refs.virtual_machine_refs',
-            'virtual-machine-interface': 'virtual_machine_refs',
-            'instance-ip': 'virtual_machine_interface_refs.virtual_machine_refs',
-            'service-instance': ['virtual_machine_back_refs',
-                                 'port_tuples.virtual_machine_interface_back_refs.virtual_machine_refs']
-        }
-
         fq_name = kwargs.get('fq_name', None)
         contrail_info = {'vrouter': [], 'control': []}
         analytics_ip = kwargs.get('analytics_ip', None)
@@ -74,7 +66,7 @@ class ContrailUtils(object):
             #there was no VM/VMI object in the context path
             #so return info for all the VM's.
             object_name = uuid_type.replace('_', '-')                
-            schema_to_use = _agent_schema_dict[object_name] 
+            schema_to_use = self._agent_schema_dict[object_name] 
             vm_objs = config_api.get_object_deep(object_name, schema_to_use, where = where)
             for vm in vm_objs:
                 fq_name = ':'.join(vm['virtual-machine']['fq_name'])

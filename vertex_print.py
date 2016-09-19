@@ -107,13 +107,16 @@ class vertexPrint(object):
     def _get_objects_from_context(self, object_type=None):
         objs = OrderedDict()
         visited_vertices = OrderedDict()
-        vv_in_order = list()
         if type(self.vertex) is not list:
             self.vertex = [self.vertex]
         for vertex in self.vertex:
             context = vertex.get_context()
-            self._merge_list_of_dicts(vv_in_order, context.get_visited_vertices())
             Utils.merge_dict(visited_vertices, self._get_merged_vertex(vertex))
+        vv_in_order = context.get_visited_vertices()
+        for vertex_dict in vv_in_order:
+            vertex_obj = context.get_vertex_of_uuid(vertex_dict['uuid'])
+            vertex_dict['depth'] = vertex_obj['depth']
+#            vertex_dict['refs'] = vertex_obj['refs']
         objs['summary_of_visited_vertexes'] = vv_in_order
         objs['cluster_status'] = context.get_cluster_status()
         objs['alarm_status'] = context.get_cluster_alarm_status()

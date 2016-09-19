@@ -1,5 +1,5 @@
 from keystone_auth import ContrailKeystoneAuth
-from contrailnode_api import ControlNode, ConfigNode, Vrouter, AnalyticsNode
+from contrailnode_api import ControlNode, ConfigNode, Vrouter, AnalyticsNode, SchemaNode
 from contrail_utils import ContrailUtils
 from cluster_status import ClusterStatus
 
@@ -64,6 +64,12 @@ class Context(object):
         return self._analytics
 
     @property
+    def schema(self):
+        if not getattr(self, '_schema', None):
+            self._schema = SchemaNode(self.connections['config_nodes'])
+        return self._schema
+
+    @property
     def status(self):
         if not getattr(self, '_status', None):
             (c_status, h_status, a_status) = ClusterStatus(token=self.token,
@@ -106,12 +112,12 @@ class Context(object):
         self.uuid_to_vertex.update({vertex['uuid']: vertex})
 
     def add_vertex(self, vertex):
-        vertex = {'vertex_type': vertex['vertex_type'],
-                  'uuid': vertex['uuid'],
-                  'fq_name': vertex.get('fq_name'),
-                  'display_name': vertex.get('display_name'),
-                  }
-        self.visited_vertexes_inorder.append(vertex)
+        vertex_summary = {'vertex_type': vertex['vertex_type'],
+                          'uuid': vertex['uuid'],
+                          'fq_name': vertex.get('fq_name'),
+                          'display_name': vertex.get('display_name'),
+                          }
+        self.visited_vertexes_inorder.append(vertex_summary)
         self._map_uuid_to_vertex(vertex)
 
     def get_vertex_of_uuid(self, uuid):
