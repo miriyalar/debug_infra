@@ -24,7 +24,7 @@ class debugVertexSI(baseVertex):
         node = self.schema.get_nodes()[0]
         schema = self.schema.get_inspect_h(node['ip_address'])
         si_name = vertex['fq_name']
-        if vertex['st_mode'] == 'in-network':
+        if vertex['st_mode'] == 'in-network-nat':
             vertex['natted_ips'] = list()
             schema_to_use = ['virtual_machine_back_refs.virtual_machine_interface_back_refs',
                              'port_tuples.virtual_machine_interface_back_refs']
