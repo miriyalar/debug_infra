@@ -36,7 +36,7 @@ class baseVertex(object):
         self.config = None
         self.control = None
         self.analytics = None
-        self.vrouter = None
+        self.vrouter = dict()
         self.vertexes = []
         self.ref_vertexes = []
         self.config_objs = {}
@@ -112,10 +112,11 @@ class baseVertex(object):
                 continue
             vertex = self._store_vertex(vertex_type, uuid, obj)
             self.store_config(vertex)
+            self._store_config_schema(vertex)
             self.store_control_config(vertex)
             self.store_analytics_uves(vertex)
             if self.non_config_obj == False:
-                self.vrouter = self.get_vrouter_info(vertex)
+                self.vrouter[uuid] = self.get_vrouter_info(vertex)
                 self.store_agent_config(vertex)
                 self.process_self(vertex)
             if self.depth == self.context.depth:
@@ -123,7 +124,7 @@ class baseVertex(object):
             if getattr(self, 'dependant_vertexes', None):
                 self._process_dependants(vertex, obj)
             if self.non_config_obj == True:
-                self.vrouter = self.get_vrouter_info(vertex)
+                self.vrouter[uuid] = self.get_vrouter_info(vertex)
                 self.store_agent_config(vertex)
                 self.process_self(vertex)
 
@@ -279,23 +280,38 @@ class baseVertex(object):
         vertex_type = vertex['vertex_type']
         fq_name_str = vertex['fq_name']
         iobjs = defaultdict(dict)
-        for hostname, inspect in self.get_vrouters():
+        for hostname, inspect in self.get_vrouter_inspect_h(vertex):
              iobjs[hostname][vertex_type] = inspect.get_config(fq_name_str=fq_name_str)
         config = vertex['agent']['config']
         Utils.merge_dict(config, iobjs)
 
     def agent_oper_db(self, agent_oper_func, vertex):
         ret = {}
-        for hostname, inspect in self.get_vrouters():
+        for hostname, inspect in self.get_vrouter_inspect_h(vertex):
             ret[hostname] = agent_oper_func(inspect, vertex)
         return ret
 
-    def get_vrouters(self):
-        if not self.vrouter:
+    def _store_config_schema(self, vertex):
+        schema_node = self.schema.get_nodes()[0]
+        schema_inspect_h = self.schema.get_inspect_h(schema_node['ip_address'])
+        ret = self.get_config_schema(vertex, schema_inspect_h)
+        if ret:
+            vertex['config']['schema'] = {schema_node['hostname']: ret}
+
+    def get_config_schema(self, vertex, schema_inspect_h):
+        pass
+
+    def get_vrouters(self, vertex):
+        uuid = vertex['uuid']
+        if not self.vrouter or not self.vrouter.get(uuid, None):
             return []
+        return self.vrouter[uuid].get_nodes()
+
+    def get_vrouter_inspect_h(self, vertex):
         inspect_h = []
-        for vrouter in self.vrouter.get_nodes():
-            inspect_h.append((vrouter['hostname'], self.vrouter.get_inspect_h(vrouter['ip_address'])))
+        uuid = vertex['uuid']
+        for vrouter in self.get_vrouters(vertex):
+            inspect_h.append((vrouter['hostname'], self.vrouter[uuid].get_inspect_h(vrouter['ip_address'])))
         return inspect_h
 
     def _add_agent_to_context(self, vertex, agent):
@@ -312,9 +328,9 @@ class baseVertex(object):
             return None
         vertex_type = vertex['vertex_type']
         obj = vertex[service]
-        if service != 'config':
-           obj = obj[subtype] if subtype else obj['config']
-        obj = obj[hostname] if hostname else obj.values()[0]
+        obj = obj[subtype] if subtype else obj.get('config', obj)
+        if hostname:
+            obj = obj[hostname] if hostname != 'default' else obj.values()[0]
         d = obj[vertex_type] if vertex_type in obj else obj
         for key in attr.split('.'):
             try:
@@ -328,13 +344,15 @@ class baseVertex(object):
                     break #Should we return None or until we had parsed
         return d
 
-    def get_attr(self, attr, vertex=None, service='config', subtype=None, hostname=None):
+    def get_attr(self, attr, vertex=None, service='config', subtype=None, hostname='default'):
         '''
            Fetch value of the requested attribute from the vertex
            Possible services: config, control, agent, analytics
            if service is not config do provide subtype as oper or config(default: config)
            attr can be hierarchy of '.' separated keys
            for eg: virtual_machine_interface_mac_addresses.mac_address.0
+           subtype: possible values 'config', 'oper'
+           hostname: name of the host, specify None to disable hostname matching
         '''
         vertices = [vertex] if vertex else self.vertexes
         ret_list = []

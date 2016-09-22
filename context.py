@@ -123,6 +123,16 @@ class Context(object):
     def get_vertex_of_uuid(self, uuid):
         return self.uuid_to_vertex[uuid]
 
+    def get_uuid_of_fqname(self, fq_name, vertex_type):
+        for vertex in self.visited_vertexes_inorder:
+            if vertex['fq_name'] == fq_name and \
+               vertex['vertex_type'] == vertex_type:
+                return vertex['uuid']
+
+    def get_vertex_of_fqname(self, fq_name, vertex_type):
+        uuid = self.get_uuid_of_fqname(fq_name, vertex_type)
+        return self.get_vertex_of_uuid(uuid)
+
     def get_control_inspect_h(self):
         inspect_h = list()
         for node in self.control.get_nodes():
