@@ -61,7 +61,6 @@ class baseVertex(object):
         if not self.token:
             self.logger.warn('Authentication failed: Unable to fetch token from keystone')
         self._set_contrail_control_objs()
-
         self.schema_dict = self.get_schema()
         if not self.element:
             if not hasattr(self, 'match_kv') or not any(self.match_kv.itervalues()):
@@ -250,12 +249,16 @@ class baseVertex(object):
         return schema_to_use(*args, **kwargs)
 
     def store_config(self, vertex):
+        if self.non_config_obj:
+            return
         uuid = vertex['uuid']
         cobj = self.config_objs.get(uuid, None)
         if cobj:
             vertex['config'].update(cobj)
 
     def store_control_config(self, vertex):
+        if self.non_config_obj:
+            return
         vertex_type = vertex['vertex_type']
         fq_name_str = vertex['fq_name']
         iobjs = defaultdict(dict)
@@ -265,6 +268,8 @@ class baseVertex(object):
         Utils.merge_dict(config, iobjs)
 
     def store_analytics_uves(self, vertex):
+        if self.non_config_obj:
+            return
         # supported uve types, this check will be removed and
         # it would automatic check in the analytics calss
         vertex_type = vertex['vertex_type']
@@ -277,6 +282,8 @@ class baseVertex(object):
             vertex['analytics']['uve'].update(aobj)
 
     def store_agent_config(self, vertex):
+        if self.non_config_obj:
+            return
         vertex_type = vertex['vertex_type']
         fq_name_str = vertex['fq_name']
         iobjs = defaultdict(dict)

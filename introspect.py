@@ -259,9 +259,11 @@ class AgentIntrospect(Introspect):
                return (True, route)
         return (False, routes)
 
+    '''
     def get_matching_flows(self, src_ip=None, dst_ip=None, protocol=None,
                            src_port=None, dst_port=None, src_vn=None,
-                           dst_vn=None):
+                           dst_vn=None, sip_nip=None, dst_nip=None,
+                           src_nvn=None, dst_nvn=None):
         matched_flows = list()
         flows = self.get_flows()
         if not flows:
@@ -283,6 +285,37 @@ class AgentIntrospect(Introspect):
                 continue
             matched_flows.append(flow)
         return matched_flows
+    '''
+
+    def get_matching_flows(self, src_ip=None, dst_ip=None, protocol=None,
+                           src_port=None, dst_port=None, src_vn=None,
+                           dst_vn=None, src_nip=None, dst_nip=None,
+                           src_nvn=None, dst_nvn=None):
+        matched_flows = list()
+        flows = self.get_flows()
+        if not flows:
+            return matched_flows
+
+        ip_set = [src_ip, dst_ip, src_nip, dst_nip]
+        vn_set = [src_vn, dst_vn, src_nvn, dst_nvn]
+        for flow in flows['flow_list'] or []:
+            if src_ip and src_ip not in ip_set:
+                continue
+            if dst_ip and dst_ip not in ip_set:
+                continue
+            if protocol and protocol != flow['protocol']:
+                continue
+            if src_port and src_port != flow['src_port']:
+                continue
+            if dst_port and dst_port != flow['dst_port']:
+                continue
+            if src_vn and src_vn not in vn_set:
+                continue
+            if dst_vn and dst_vn not in vn_set:
+                continue
+            matched_flows.append(flow)
+        return matched_flows
+
 
     def get_dropstats(self):
         return self.get('Snh_KDropStatsReq?')
