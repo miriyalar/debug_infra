@@ -113,10 +113,7 @@ class SchemaNode(IntrospectNode):
             print 'Schema Transformer is down'
         elif len(self.handles) > 1:
             print 'Multiple active Schema transformer processes'
-        self.active_st = self.handles.values()[0] if self.handles else None
-
-    def get_inspect_h(self):
-        return self.active_st
+        self.nodes = [self.node]
 
 '''
 class IntrospectNode:

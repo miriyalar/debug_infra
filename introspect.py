@@ -142,24 +142,47 @@ class Introspect(object):
             return False
 
 class SchemaIntrospect(Introspect):
-    def get_service_chains(self, sc_name='', vn_list=None):
-        url_path = 'Snh_ServiceChainList?sc_name=%s'%('')#sc_name #WA till ST introspect bug is fixed
+    def get_object(self, object_type, uuid=None, fq_name=''):
+        url_path = 'Snh_StObjectReq?object_type=%s&object_id_or_fq_name=%s'%(
+                    object_type, (uuid or fq_name))
         response = self.get(url_path)
-        service_chains = list()
-        if not response or not response.get('service_chains'):
+        if not response or not response.get('objects'):
             return []
-        for service_chain in response['service_chains']:
-            if sc_name:
-                if service_chain['sc_name'] == sc_name:
-                    service_chains.append(service_chain)
-                    break
-            elif vn_list:
-                left_vn = service_chain['left_virtual_network']
-                right_vn = service_chain['right_virtual_network']
+        return response['objects']
+
+    def get_service_chains(self, sc_name='', vn_list=None):
+        response = self.get_object('service_chain', sc_name)
+        if sc_name:
+            return response
+        service_chains = list()
+        for service_chain in response:
+            prop = {p['property_name']:p['property'] for p in service_chain['properties']}
+            if vn_list:
+                left_vn = prop['left_network']
+                right_vn = prop['right_network']
                 if set(vn_list) - set((left_vn, right_vn)):
                     continue
                 service_chains.append(service_chain)
         return service_chains
+
+    def get_service_instances(self, si_uuid=None, si_fqname=None):
+        return self.get_object('service_instance', si_uuid, si_fqname)
+
+    def get_virtual_networks(self, vn_uuid=None, vn_fqname=None):
+        return self.get_object('virtual_network', vn_uuid, vn_fqname)
+
+    def get_vrfs_of_vn(self, vn_uuid=None, vn_fqname=None, sc_uuid=None, si_name=None):
+        vn_obj = self.get_virtual_networks(vn_uuid, vn_fqname)[0]
+        refs = {p['object_type']:p['object_fq_name']
+                for p in vn_obj['obj_refs']}
+        match = vn_obj['object_fq_name']
+        ris = list()
+        for ri in refs['routing_instance']:
+            if (sc_uuid and 'service-'+sc_uuid not in ri) or \
+                (si_name and not ri.endswith(si_name.replace(':', '_'))):
+                continue
+            ris.append(ri)
+        return ris
 
 class ControllerIntrospect(Introspect):
     def get_config(self, fq_name_str='', node_type=''):

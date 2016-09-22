@@ -70,7 +70,7 @@ class debugVertexIP(baseVertex):
         oper['interface'] = intf_rec
 
         ip_address = [oper['interface']['ip_addr']]
-        ip_address.extend(oper['interface']['fixed_ip4_list'])
+        ip_address.extend(oper['interface']['fixed_ip4_list'] or [])
         if instance_ip_address in ip_address:
             pstr = "IP address %s is found in the interface rec %s" % \
                    (instance_ip_address, intf_rec['name'])
