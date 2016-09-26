@@ -41,10 +41,14 @@ class debugVertexSI(baseVertex):
                         if iip.get('instance_ip_secondary', False):
                             continue
                         vertex['natted_ips'].append(iip['instance_ip_address'])
-        vertex['right_vrf'] = schema.get_vrfs_of_vn(right_vn, sc_uuid=self.sc_name,
-                                                    si_name=vertex['fq_name'])[0]
-        vertex['left_vrf'] = schema.get_vrfs_of_vn(left_vn, sc_uuid=self.sc_name,
-                                                   si_name=vertex['fq_name'])[0]
+            vertex['right_vrf'] = right_vn + ':' + right_vn.split(':')[-1]
+            vertex['left_vrf'] = schema.get_vrfs_of_vn(left_vn, sc_uuid=self.sc_name,
+                                                       si_name=vertex['fq_name'])[0]
+        elif vertex['st_mode'] == 'in-network':
+            vertex['right_vrf'] = schema.get_vrfs_of_vn(right_vn, sc_uuid=self.sc_name,
+                                                        si_name=vertex['fq_name'])[0]
+            vertex['left_vrf'] = schema.get_vrfs_of_vn(left_vn, sc_uuid=self.sc_name,
+                                                       si_name=vertex['fq_name'])[0]
         vertex['vrouters'] = self.get_vrouters(vertex)
 
     def get_schema(self):

@@ -244,6 +244,13 @@ class AgentIntrospect(Introspect):
         url_path = 'Snh_FetchAllFlowRecords?'
         return self.get(path=url_path)
 
+    def get_vrf_id(self, vrf_fqname):
+        if not vrf_fqname:
+            return None
+        url_path = 'Snh_VrfListReq?name=%s'%vrf_fqname
+        response = self.get(url_path)
+        return [x['ucindex'] for x in response['VrfListResp']['vrf_list'] if x['name'] == vrf_fqname][0]
+
     def is_prefix_exists(self, vrf_fq_name, prefix, plen=32):
         routes = self.get_routes(vrf_fq_name)
         for route in routes['Inet4UcRouteResp']['route_list']:
@@ -259,49 +266,25 @@ class AgentIntrospect(Introspect):
                return (True, route)
         return (False, routes)
 
-    '''
-    def get_matching_flows(self, src_ip=None, dst_ip=None, protocol=None,
-                           src_port=None, dst_port=None, src_vn=None,
-                           dst_vn=None, sip_nip=None, dst_nip=None,
-                           src_nvn=None, dst_nvn=None):
-        matched_flows = list()
-        flows = self.get_flows()
-        if not flows:
-            return matched_flows
-        for flow in flows['flow_list'] or []:
-            if src_ip and src_ip != flow['sip']:
-                continue
-            if dst_ip and dst_ip != flow['dip']:
-                continue
-            if protocol and protocol != flow['protocol']:
-                continue
-            if src_port and src_port != flow['src_port']:
-                continue
-            if dst_port and dst_port != flow['dst_port']:
-                continue
-            if src_vn and src_vn not in flow['src_vn_match']:
-                continue
-            if dst_vn and dst_vn not in flow['dst_vn_match']:
-                continue
-            matched_flows.append(flow)
-        return matched_flows
-    '''
-
     def get_matching_flows(self, src_ip=None, dst_ip=None, protocol=None,
                            src_port=None, dst_port=None, src_vn=None,
                            dst_vn=None, src_nip=None, dst_nip=None,
-                           src_nvn=None, dst_nvn=None):
+                           src_nvn=None, dst_nvn=None, 
+                           src_vrf_id=None, dest_vrf_id=None):
         matched_flows = list()
         flows = self.get_flows()
         if not flows:
             return matched_flows
-
-        ip_set = [src_ip, dst_ip, src_nip, dst_nip]
-        vn_set = [src_vn, dst_vn, src_nvn, dst_nvn]
+        ip_set = set([src_ip, dst_ip] + list(src_nip or []) + list(dst_nip or []))
+        vn_set = set([src_vn, dst_vn, src_nvn, dst_nvn])
+        vrf_set = set([src_vrf_id, dest_vrf_id])
+        ip_set.discard(None); ip_set.discard('')
+        vn_set.discard(None); vn_set.discard('')
+        vrf_set.discard(None); vrf_set.discard('')
         for flow in flows['flow_list'] or []:
-            if src_ip and src_ip not in ip_set:
+            if ip_set and flow['sip'] not in ip_set:
                 continue
-            if dst_ip and dst_ip not in ip_set:
+            if ip_set and flow['dip'] not in ip_set:
                 continue
             if protocol and protocol != flow['protocol']:
                 continue
@@ -309,9 +292,13 @@ class AgentIntrospect(Introspect):
                 continue
             if dst_port and dst_port != flow['dst_port']:
                 continue
-            if src_vn and src_vn not in vn_set:
+            if vn_set and flow['src_vn_match'] not in vn_set:
                 continue
-            if dst_vn and dst_vn not in vn_set:
+            if vn_set and flow['dst_vn_match'] not in vn_set:
+                continue
+            if vrf_set and flow['vrf'] not in vrf_set:
+                continue
+            if vrf_set and flow['dest_vrf'] not in vrf_set:
                 continue
             matched_flows.append(flow)
         return matched_flows

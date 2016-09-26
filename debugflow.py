@@ -9,7 +9,7 @@ from debugfip import debugVertexFIP
 class debugVertexFlow(baseVertex):
     vertex_type = 'flow'
     non_config_obj = True
-    dependant_vertexes = []
+    dependant_vertexes = ['debugVertexSC']
     def __init__(self, context=None, source_ip='', dest_ip='',
                  source_vn='', dest_vn='', protocol='',
                  source_port='', dest_port='', **kwargs):
@@ -27,6 +27,10 @@ class debugVertexFlow(baseVertex):
         self.source_nvrf = kwargs.get('source_nvrf', '')
         self.dest_nvrf = kwargs.get('dest_nvrf', '')
         self.match_kv = {'source_ip': source_ip, 'dest_ip': dest_ip}
+        if not self.source_vrf:
+            self.source_vrf = source_vn + ':' + source_vn.split(':')[-1]
+        if not self.dest_vrf:
+            self.dest_vrf = dest_vn + ':' + dest_vn.split(':')[-1]
         super(debugVertexFlow, self).__init__(context=context, **kwargs)
 
     def get_schema(self):
@@ -45,14 +49,19 @@ class debugVertexFlow(baseVertex):
                                           virtual_network=self.source_vn,
                                           context=self.context)
         vertex = self.srcip_vertex.vertexes[0]
+        left_vn = ':'.join(self.get_attr('virtual_network_refs.0.to', vertex)[0])
         self.srcip_vrouters = self.srcip_vertex.get_vrouters(vertex)
         self.destip_vertex = debugVertexIP(instance_ip_address=self.dest_ip,
                                            virtual_network=self.dest_vn,
                                            context=self.context)
         vertex = self.destip_vertex.vertexes[0]
+        right_vn = ':'.join(self.get_attr('virtual_network_refs.0.to', vertex)[0])
         self.destip_vrouters = self.destip_vertex.get_vrouters(vertex)
         objs = list()
-        objs.append({self.vertex_type: {'uuid': self.get_uuid()}})
+        objs.append({self.vertex_type: {'uuid': self.get_uuid(),
+                                        'left_vn': left_vn,
+                                        'right_vn': right_vn
+                                        }})
         return objs
 
     def store_config(self, vertex):
@@ -61,27 +70,71 @@ class debugVertexFlow(baseVertex):
     def get_vrouter_info(self, vertex):
         pass
 
+    def get_path(self):
+        path = list()
+        sc_vertexes = list()
+        pleft_vrf = self.source_vrf
+        pright_vrf = self.dest_vrf
+        for dep_vertex_objs in self.get_dependent_vertices():
+             if dep_vertex_objs.vertexes:
+                 sc_vertexes.extend(dep_vertex_objs.vertexes)
+        source = {'sip': self.source_ip,
+                  'dip': self.dest_ip,
+                  'source_vrf': self.source_vrf,
+                  'vrouters': self.srcip_vrouters,
+                  'dest_vrf': self.dest_vrf
+                 }
+        initial = True
+        path.append(source)
+        natted_ips = None
+        if sc_vertexes:
+            # Do the service chain path
+            for sc_vertex in sc_vertexes:
+                for si_path in sc_vertex['path']:
+                    if initial:
+                        path[-1]['dest_vrf'] = si_path['left_vrf']
+                        initial = False
+                    pleft = {'vrouters': si_path['vrouters'],
+                             'source_vrf': pleft_vrf,
+                             'dest_vrf': si_path['left_vrf'],
+                             'sip': self.source_ip,
+                             'dip': self.dest_ip,
+                             'dnip': natted_ips,
+                             }
+                    natted_ips = si_path.get('natted_ips', [])
+                    pright = {'vrouters': si_path['vrouters'],
+                              'source_vrf': pright_vrf,
+                              'dest_vrf': si_path['right_vrf'],
+                              'sip': self.source_ip,
+                              'dip': self.dest_ip,
+                              'snip': natted_ips,
+                             }
+                    path.append(pleft)
+                    path.append(pright) 
+        dest = {'sip': self.source_ip,
+                'dip': self.dest_ip,
+                'source_vrf': self.dest_vrf,
+                'dest_vrf': path[-1]['dest_vrf'],
+                'snip': natted_ips,
+                'vrouters': self.destip_vrouters
+               }
+        path.append(dest)
+        return path
+ 
     def process_self(self, vertex):
-        svrouter_flow_vertex = baseFlowVertex(context=self.context,
-                                              source_ip=self.source_ip,
-                                              vrouters=self.srcip_vrouters,
-                                              dest_ip=self.dest_ip, 
-                                              **{'source_vrf':self.source_vrf, 'dest_vrf':self.dest_vrf,
-                                                 'source_nvrf':self.source_nvrf, 'dest_nvrf':self.dest_nvrf,
-                                                 'source_nip':self.source_nip, 'dest_nip':self.dest_nip})
-        dvrouter_flow_vertex = baseFlowVertex(context=self.context,
-                                              source_ip=self.source_ip,
-                                              vrouters=self.destip_vrouters,
-                                              dest_ip=self.dest_ip, 
-                                              **{'source_vrf':self.source_vrf, 'dest_vrf':self.dest_vrf,
-                                                 'source_nvrf':self.source_nvrf, 'dest_nvrf':self.dest_nvrf,
-                                                 'source_nip':self.source_nip, 'dest_nip':self.dest_nip})
-
-    '''
-    def print_vertex(self):
-        vP = vertexPrint([vFlow.fwdflow, vFlow.revflow])
-        vP.convert_json()
-    '''
+        vertex['path'] = self.get_path()
+        for path in vertex['path']:
+            baseFlowVertex(context=self.context,
+                           vrouters=path['vrouters'],
+                           source_ip=path['sip'],
+                           dest_ip=path['dip'], 
+                           source_vrf=path['source_vrf'],
+                           dest_vrf=path['dest_vrf'],
+                           source_nip=path.get('snip'),
+                           dest_nip=path.get('dnip'),
+                           source_vn=self.source_vn,
+                           dest_vn=self.dest_vn,
+                           )
 
 def parse_args(args):
     parser = ArgumentParser(description='Debug utility for Flow', add_help=True)

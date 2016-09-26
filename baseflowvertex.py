@@ -1,29 +1,3 @@
-'''
-Take context as argument, in addition to regular input of 4-tuple
-Create a uuid, fq_name for a flow and stick in the vertex
-base flow verter class?
-should we create a singleton object for context and use it at baseVertex and baseFlowVertex
-
-vertex_type = baseflow
-input = 
-via element
-
-source_ip = '<ip address>',
-src_vrouter = [
-{ 'hostname': '<host name>',
-'sandesh_port': '<port>'
-'peers': []
-}
-]
-
-dest_vrouter = [
-{'hostname': '<host name>',
-'sandesh_port': '<port>',
-'peers': []
-}
-]
-'''
-
 import sys
 import argparse
 from collections import defaultdict
@@ -39,52 +13,44 @@ import time
 
 
 class baseFlowVertex(baseVertex):
-    vertex_type = 'baseflow'
+    vertex_type = 'session'
     non_config_obj = True
-    def __init__(self, context=None, **kwargs):
-        self.logger = get_logger(name=self.__class__.__name__, **kwargs)
-        self.source_ip = kwargs.pop('source_ip', '')
-        self.source_nip = kwargs.pop('source_nip', '')
-        self.vrouters = kwargs.pop('vrouters', [])
-        self.dest_ip = kwargs.pop('dest_ip', '')
-        self.dest_nip = kwargs.pop('dest_nip', '')
-        self.source_vrf = kwargs.pop('source_vrf', '')
-        self.source_nvrf = kwargs.pop('source_nvrf', '')
-        self.dest_vrf = kwargs.pop('dest_vrf', '')
-        self.dest_nvrf = kwargs.pop('dest_nvrf', '')
-        self.protocol = kwargs.pop('protocol', '')
-        self.source_port = kwargs.pop('source_port', '')
-        self.dest_port = kwargs.pop('dest_port', '')
-        if not context:
-            self.context = Context(**kwargs)
-        else:
-            self.context = context
-        self.src_vn_fqname = self.source_vrf[:self.source_vrf.rfind(':'):]
-        self.dest_vn_fqname = self.dest_vrf[:self.dest_vrf.rfind(':'):]
-        self.src_nvn_fqname = self.source_nvrf[:self.source_vrf.rfind(':'):]
-        self.dest_nvn_fqname = self.dest_nvrf[:self.dest_vrf.rfind(':'):]
+    def __init__(self, source_ip, dest_ip, source_vrf,
+                 dest_vrf, vrouters, **kwargs):
+        self.source_ip = source_ip
+        self.source_vrf = source_vrf
+        self.dest_vrf = dest_vrf
+        self.dest_ip = dest_ip
+        self.vrouters = vrouters
+        self.source_nip = kwargs.pop('source_nip', None)
+        self.dest_nip = kwargs.pop('dest_nip', None)
+        self.source_nvrf = kwargs.pop('source_nvrf', None)
+        self.dest_nvrf = kwargs.pop('dest_nvrf', None)
+        self.protocol = kwargs.pop('protocol', None)
+        self.source_port = kwargs.pop('source_port', None)
+        self.dest_port = kwargs.pop('dest_port', None)
+        self.src_vn_fqname = kwargs.pop('source_vn', None)
+        self.dest_vn_fqname = kwargs.pop('dest_vn', None)
+        self.src_vn_fqname = self.src_vn_fqname or self.source_vrf[:self.source_vrf.rfind(':'):]
+        self.dest_vn_fqname = self.dest_vn_fqname or self.dest_vrf[:self.dest_vrf.rfind(':'):]
+        self.src_nvn_fqname = self.source_nvrf and self.source_nvrf[:self.source_vrf.rfind(':'):]
+        self.dest_nvn_fqname = self.dest_nvrf and self.dest_nvrf[:self.dest_vrf.rfind(':'):]
         self.match_kv = {'dummy': 'dummy'}
-        super(baseFlowVertex, self).__init__(context=context, **kwargs)
-        '''
-        self.uuid = self.get_uuid()
-        self.vertex = create_vertex(self.vertex_type,
-                                    uuid = self.uuid,
-                                    fq_name = self.uuid)
-        self.process_vertex()
-        self.context.add_vertex(self.vertex)
-        '''
+        super(baseFlowVertex, self).__init__(**kwargs)
 
     def get_schema(self):
         pass
 
     def get_uuid(self):
-        return ':'.join(['baseflow', self.source_ip, self.source_nip,
-                         self.dest_ip, self.dest_nip,
-                         self.source_vrf, self.source_nvrf,
-                         self.dest_vrf, self.dest_nvrf,
-                         self.source_port, self.dest_port,
-                         self.protocol] + 
-                        [vrouter['hostname'] for vrouter in self.vrouters])
+        key = ['session', self.source_ip, self.dest_ip,
+               self.source_vrf, self.source_nvrf,
+               self.dest_vrf, self.dest_nvrf,
+               self.source_port, self.dest_port, self.protocol] +\
+               list(self.source_nip or [None]) + list(self.dest_nip or [None]) +\
+               [vrouter['hostname'] for vrouter in self.vrouters]
+        uuid = ':'.join(['' if val is None else val for val in key])
+        return uuid
+
     def locate_obj(self):
         objs = list()
         objs.append({self.vertex_type: {'uuid': self.get_uuid()}})
@@ -139,17 +105,21 @@ class baseFlowVertex(baseVertex):
 
     def check_flowtable(self, introspect, vertex):
         flows = list()
+        src_vrf_id = introspect.get_vrf_id(self.source_vrf)
+        dest_vrf_id = introspect.get_vrf_id(self.dest_vrf)
         flow = introspect.get_matching_flows(self.source_ip, self.dest_ip,
-                                          self.protocol, self.source_port,
-                                          self.dest_port, self.src_vn_fqname,
-                                          self.dest_vn_fqname, self.source_nip,
-                                          self.dest_nip, self.src_nvn_fqname, self.dest_nvn_fqname)
+                                             self.protocol, self.source_port,
+                                             self.dest_port, self.src_vn_fqname,
+                                             self.dest_vn_fqname, self.source_nip,
+                                             self.dest_nip, self.src_nvn_fqname, self.dest_nvn_fqname,
+                                             src_vrf_id, dest_vrf_id)
         if flow:
-            print 'Found matching %s flow on agent' % len(flow)
+            print 'Found matching %s flow on agent %s, sip %s and dip %s ' % (len(flow), introspect._ip, 
+                                                                              self.source_ip, self.dest_ip)
             flows.extend(flow)
         else:
-            print 'Unable to find matching flow on agent %s'%introspect._ip
-
+            print 'Unable to find matching flow on agent %s for sip %s, dip %s, snip %s, dnip %s' % (introspect._ip,
+                  self.source_ip, self.dest_ip, self.source_nip, self.dest_nip)
         for flow in flows:
             if flow['sg_action_summary'][0]['action'] != 'pass':
                 print 'SG drop'

@@ -7,18 +7,43 @@ class debugVertexSC(baseVertex):
     vertex_type = 'service-chain'
     non_config_obj = True
     dependant_vertexes = ['debugVertexSI']
-    def __init__(self, left_vn_fq_name, right_vn_fq_name, context=None, **kwargs):
+    def __init__(self, left_vn_fq_name=None, right_vn_fq_name=None,
+                 context=None, **kwargs):
         self.left_vn = left_vn_fq_name
         self.right_vn = right_vn_fq_name
-        self.match_kv = {'left_vn': self.left_vn,
-                         'right_vn': self.right_vn}
+        self.match_kv = {'dummy': 'dummy'}
         self.service_chain = dict()
         self.si_vertex = dict()
         super(debugVertexSC, self).__init__(context=context, **kwargs)
 
     def get_schema(self):
-        # Needed only when we have a caller for this object
         pass
+
+    def get_vrouter_info(self, vertex):
+        pass
+
+    def get_uuid(self, sc_name):
+        return sc_name
+
+    def locate_obj(self):
+        node = self.schema.get_nodes()[0]
+        inspect = self.schema.get_inspect_h(node['ip_address'])
+        if self.element is not None:
+            self.left_vn = self.element['left_vn']
+            self.right_vn = self.element['right_vn']
+        service_chains = inspect.get_service_chains(vn_list=[self.left_vn, self.right_vn])
+        objs = list()
+        for service_chain in service_chains or []:
+            sc_name = service_chain['object_fq_name']
+            uuid = self.get_uuid(sc_name)
+            self.service_chain[uuid] = service_chain
+            objs.append({self.vertex_type: {'sc_name': sc_name,
+                                            'uuid': uuid}})
+        return objs
+
+    def store_config(self, vertex):
+        vdict = vertex['config']['schema'] = dict()
+        vdict.update({self.schema.node['hostname']: self.service_chain[vertex['uuid']]})
 
     def process_self(self, vertex):
         uuid = vertex['uuid']
@@ -34,29 +59,6 @@ class debugVertexSC(baseVertex):
             si_path['left_vrf'] = si['left_vrf']
             si_path['right_vrf'] = si['right_vrf']
             vertex['path'].append(si_path)
-
-    def get_uuid(self, sc_name):
-        return sc_name
-
-    def locate_obj(self):
-        node = self.schema.get_nodes()[0]
-        inspect = self.schema.get_inspect_h(node['ip_address'])
-        service_chains = inspect.get_service_chains(vn_list=[self.left_vn, self.right_vn])
-        objs = list()
-        for service_chain in service_chains or []:
-            sc_name = service_chain['object_fq_name']
-            uuid = self.get_uuid(sc_name)
-            self.service_chain[uuid] = service_chain
-            objs.append({self.vertex_type: {'sc_name': sc_name,
-                                            'uuid': uuid}})
-        return objs
-
-    def store_config(self, vertex):
-        vdict = vertex['config']['schema'] = dict()
-        vdict.update({self.schema.node['hostname']: self.service_chain[vertex['uuid']]})
-
-    def get_vrouter_info(self, vertex):
-        pass
 
 def parse_args(args):
     parser = ArgumentParser(description='Debug utility for SC', add_help=True)
