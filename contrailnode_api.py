@@ -78,6 +78,38 @@ class ConfigNode:
                 pass
         return dobjs, objs
 
+
+    def get_ip_type(self, ip_address=None, vn=None, 
+                    config_ip=None, config_port=None):
+        ip_type = None
+        if config_ip and config_port:
+            config_api = None
+            for capi in self.config_api:
+                if capi['ip_address'] == config_ip and \
+                   capi['port'] == config_port:
+                    config_api = [capi]
+                    break
+        else:
+            config_api = self.config_api
+        if not config_api or not vn or not ip_address:
+            return ip_type
+        try:
+            capi = config_api[0]['obj']
+            iobjs = capi.get_object_deep('virtual-network', 
+                                         'instance_ip_back_refs.instance_ip_address', 
+                                         where='fq_name=%s' % (vn))
+            if ip_address in iobjs:
+                return 'instance-ip'
+            iobjs = capi.get_object_deep('virtual-network',
+                                         'floating_ip_pools.floating_ips.floating_ip_address',
+                                         where='fq_name=%s'%(vn))
+            if ip_address in iobjs:
+                return 'floating-ip'
+        except Exception as e:
+            print e
+        return ip_type
+
+
 class IntrospectNode(object):
     def __init__(self, nodes, _cls, port=None):
         self.nodes = nodes
