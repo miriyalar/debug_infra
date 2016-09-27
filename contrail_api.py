@@ -280,7 +280,7 @@ class ContrailApi:
                 ret_list.extend(objs)
             return ret_list
 
-        if ',' in object_path_list_str:
+        if object_path_list_str and ',' in object_path_list_str:
             ret_list = []
             object_path_list = object_path_list_str.split(',')
             for object_path in object_path_list:
