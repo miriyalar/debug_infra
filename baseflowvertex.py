@@ -118,8 +118,9 @@ class baseFlowVertex(baseVertex):
                                                                               self.source_ip, self.dest_ip)
             flows.extend(flow)
         else:
-            print 'Unable to find matching flow on agent %s for sip %s, dip %s, snip %s, dnip %s' % (introspect._ip,
-                  self.source_ip, self.dest_ip, self.source_nip, self.dest_nip)
+            print 'Unable to find matching flow on agent %s for sip %s, dip %s, snip %s, dnip %s, svn %s, dvn %s' % \
+                (introspect._ip, self.source_ip, self.dest_ip, self.source_nip, self.dest_nip, \
+                 self.src_vn_fqname, self.dest_vn_fqname)
         for flow in flows:
             if flow['sg_action_summary'][0]['action'] != 'pass':
                 print 'SG drop'

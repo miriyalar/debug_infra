@@ -10,6 +10,7 @@ class debugVertexFlow(baseVertex):
     vertex_type = 'flow'
     non_config_obj = True
     dependant_vertexes = ['debugVertexSC']
+    ip_type = ['instance-ip', 'floating-ip']
     def __init__(self, context=None, source_ip='', dest_ip='',
                  source_vn='', dest_vn='', protocol='',
                  source_port='', dest_port='', **kwargs):
@@ -26,6 +27,8 @@ class debugVertexFlow(baseVertex):
         self.dest_vrf = kwargs.get('dest_vrf', '')
         self.source_nvrf = kwargs.get('source_nvrf', '')
         self.dest_nvrf = kwargs.get('dest_nvrf', '')
+        self.source_ip_type = kwargs.get('source_ip_type', '')
+        self.dest_ip_type = kwargs.get('dest_ip_type', '')
         self.match_kv = {'source_ip': source_ip, 'dest_ip': dest_ip}
         if not self.source_vrf:
             self.source_vrf = source_vn + ':' + source_vn.split(':')[-1]
@@ -45,15 +48,38 @@ class debugVertexFlow(baseVertex):
                          self.protocol])
 
     def locate_obj(self):
-        self.srcip_vertex = debugVertexIP(instance_ip_address=self.source_ip,
-                                          virtual_network=self.source_vn,
-                                          context=self.context)
+        if self.source_ip_type not in self.ip_type:
+            self.source_ip_type = self.config.get_ip_type(self.source_ip, self.source_vn)
+        if self.source_ip_type == 'instance-ip':
+            self.srcip_vertex = debugVertexIP(instance_ip_address=self.source_ip,
+                                              virtual_network=self.source_vn,
+                                              context=self.context)
+        elif self.source_ip_type == 'floating-ip':
+            self.srcip_vertex = debugVertexFIP(floating_ip_address=self.source_ip,
+                                               virtual_network=self.self.source_vn,
+                                               context=self.context)
+        else:
+            self.logger.error('source ip type is not defined, ip = %s, vn = %s' % (self.source_ip,
+                                                                                   self.source_vn))
+            return
         vertex = self.srcip_vertex.vertexes[0]
         left_vn = ':'.join(self.get_attr('virtual_network_refs.0.to', vertex)[0])
         self.srcip_vrouters = self.srcip_vertex.get_vrouters(vertex)
-        self.destip_vertex = debugVertexIP(instance_ip_address=self.dest_ip,
-                                           virtual_network=self.dest_vn,
-                                           context=self.context)
+
+        if self.dest_ip_type not in self.ip_type:
+            self.dest_ip_type = self.config.get_ip_type(self.dest_ip, self.dest_vn)
+        if self.dest_ip_type == 'instance-ip':
+            self.destip_vertex = debugVertexIP(instance_ip_address=self.dest_ip,
+                                               virtual_network=self.dest_vn,
+                                               context=self.context)
+        elif self.dest_ip_type == 'floating-ip':
+            self.destip_vertex = debugVertexFIP(floating_ip_address=self.dest_ip,
+                                                virtual_network=self.dest_vn,
+                                                context=self.context)
+        else:
+            self.logger.error('dest ip type is not defined, ip = %s, vn = %s' % (self.dest_ip,
+                                                                                 self.dest_vn))
+            return
         vertex = self.destip_vertex.vertexes[0]
         right_vn = ':'.join(self.get_attr('virtual_network_refs.0.to', vertex)[0])
         self.destip_vrouters = self.destip_vertex.get_vrouters(vertex)
