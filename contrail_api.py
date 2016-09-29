@@ -354,7 +354,7 @@ class ContrailApi:
                     #   pdb.set_trace()	
                     return [new_obj]
             else:
-                pstr = 'Error: path %s not found, in %s, %s' % \
+                pstr = 'Warning: path %s not found, in %s, %s' % \
                        (cur_object, obj['display_name'], ':'.join(obj['fq_name']))
                 print pstr
                 return [None]

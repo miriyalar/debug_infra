@@ -69,6 +69,8 @@ class ContrailUtils(object):
             schema_to_use = self._agent_schema_dict[object_name] 
             vm_objs = config_api.get_object_deep(object_name, schema_to_use, where = where)
             for vm in vm_objs:
+                if not vm:
+                    continue
                 fq_name = ':'.join(vm['virtual-machine']['fq_name'])
                 tmp_contrail_info = self.get_contrail_vm_info(fq_name, config_ip=config_ip, config_port=config_port,
                                                                        analytics_ip=analytics_ip, config_api=config_api)

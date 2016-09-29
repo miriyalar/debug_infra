@@ -32,6 +32,9 @@ class debugVertexSC(baseVertex):
             self.left_vn = self.element['left_vn']
             self.right_vn = self.element['right_vn']
         service_chains = inspect.get_service_chains(vn_list=[self.left_vn, self.right_vn])
+        if not service_chains:
+            self.logger.warning('no service chains found between %s and %s' % (self.left_vn,
+                                                                            self.right_vn))
         objs = list()
         for service_chain in service_chains or []:
             sc_name = service_chain['object_fq_name']

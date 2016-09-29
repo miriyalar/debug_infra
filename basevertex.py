@@ -105,6 +105,8 @@ class baseVertex(object):
     def _process_vertexes(self, objs):
         vertex_type = self.vertex_type
         for obj in objs or []:
+            if not obj:
+                continue
             uuid = obj[vertex_type]['uuid']
             if self.context.is_visited_vertex(uuid):
                 self.ref_vertexes.append(self.context.get_vertex_of_uuid(uuid))
@@ -116,6 +118,9 @@ class baseVertex(object):
             self.store_analytics_uves(vertex)
             if self.non_config_obj == False:
                 self.vrouter[uuid] = self.get_vrouter_info(vertex)
+                if not self.vrouter[uuid].get_nodes():
+                    self.logger.error('Unable to find vrouter for %s:%s' % (self.vertex_type,
+                                                                       uuid))
                 self.store_agent_config(vertex)
                 self.process_self(vertex)
             if self.depth == self.context.depth:
