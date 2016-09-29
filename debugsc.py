@@ -2,13 +2,14 @@ import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
+import debugsi
 
 class debugVertexSC(baseVertex):
     vertex_type = 'service-chain'
     non_config_obj = True
-    dependant_vertexes = ['debugVertexSI']
     def __init__(self, left_vn_fq_name=None, right_vn_fq_name=None,
                  context=None, **kwargs):
+        self.dependant_vertexes = [debugsi.debugVertexSI]
         self.left_vn = left_vn_fq_name
         self.right_vn = right_vn_fq_name
         self.match_kv = {'dummy': 'dummy'}
@@ -58,6 +59,7 @@ class debugVertexSC(baseVertex):
             si_path['natted_ips'] = si['natted_ips']
             si_path['left_vrf'] = si['left_vrf']
             si_path['right_vrf'] = si['right_vrf']
+            si_path['si_name'] = si['fq_name']
             vertex['path'].append(si_path)
 
 def parse_args(args):

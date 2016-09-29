@@ -5,14 +5,15 @@ from parser import ArgumentParser
 from basevertex import baseVertex
 from debugip import debugVertexIP
 from debugfip import debugVertexFIP
+import debugsc
 
 class debugVertexFlow(baseVertex):
     vertex_type = 'flow'
     non_config_obj = True
-    dependant_vertexes = ['debugVertexSC']
     def __init__(self, context=None, source_ip='', dest_ip='',
                  source_vn='', dest_vn='', protocol='',
                  source_port='', dest_port='', **kwargs):
+        self.dependant_vertexes = [debugsc.debugVertexSC]
         self.source_ip = source_ip
         self.dest_ip = dest_ip
         self.source_vn = source_vn
@@ -100,6 +101,7 @@ class debugVertexFlow(baseVertex):
                              'sip': self.source_ip,
                              'dip': self.dest_ip,
                              'dnip': natted_ips,
+                             'si-name': si_path['si_name']
                              }
                     natted_ips = si_path.get('natted_ips', [])
                     pright = {'vrouters': si_path['vrouters'],
@@ -108,6 +110,7 @@ class debugVertexFlow(baseVertex):
                               'sip': self.source_ip,
                               'dip': self.dest_ip,
                               'snip': natted_ips,
+                              'si-name': si_path['si_name']
                              }
                     path.append(pleft)
                     path.append(pright) 

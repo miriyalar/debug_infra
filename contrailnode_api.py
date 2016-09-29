@@ -45,6 +45,13 @@ class ConfigNode:
                 capi['obj'] = ContrailApi(ip=capi['ip_address'], port=capi['port'], token=self.token)
                 self.config_api.append(capi)
 
+    def get_fqname_to_id(self, obj_type, fq_name):
+        fq_name = fq_name.split(':') if ':' in fq_name else fq_name
+        api = self.config_api[0]['obj']
+        data = {'type': obj_type, 'fq_name': fq_name}
+        response = api.post('fqname-to-id', data)
+        return response['uuid']
+
     def get_object(self, object_type, config_ip=None, config_port=None,
                    schema_to_use='', where=''):
         objs = {}

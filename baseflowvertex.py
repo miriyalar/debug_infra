@@ -6,17 +6,18 @@ from parser import ArgumentParser
 from debugip import debugVertexIP
 from vertex_print import vertexPrint
 from utils import DictDiffer
-from basevertex import get_logger, create_vertex, baseVertex
+from basevertex import get_logger, baseVertex
 from contrailnode_api import Vrouter
 from context import Context
 import time
-
+import debugroute
 
 class baseFlowVertex(baseVertex):
     vertex_type = 'session'
     non_config_obj = True
     def __init__(self, source_ip, dest_ip, source_vrf,
                  dest_vrf, vrouters, **kwargs):
+        self.dependant_vertexes = []#[debugroute.debugVertexRoute]
         self.source_ip = source_ip
         self.source_vrf = source_vrf
         self.dest_vrf = dest_vrf
@@ -53,7 +54,10 @@ class baseFlowVertex(baseVertex):
 
     def locate_obj(self):
         objs = list()
-        objs.append({self.vertex_type: {'uuid': self.get_uuid()}})
+        objs.append({self.vertex_type: {'uuid': self.get_uuid(),
+                                        'prefix': self.dest_ip,
+                                        'ri_fqname': self.dest_vrf,
+                                        'vrouters': self.vrouters}})
         return objs
 
     def store_config(self, vertex):
@@ -63,6 +67,9 @@ class baseFlowVertex(baseVertex):
         return Vrouter(self.vrouters)
 
     def process_self(self, vertex):
+        vertex['route_uuid'] = debugroute.get_route_uuid(prefix=self.dest_ip,
+                                                     ri_fqname=self.dest_vrf,
+                                                     vrouters=self.vrouters)
         agent = {}
         agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex)
         self._add_agent_to_context(vertex, agent)
@@ -72,37 +79,10 @@ class baseFlowVertex(baseVertex):
 
     def _get_agent_oper_db(self, introspect, vertex):
         oper = {}
-        oper['route'] = self.check_routes(introspect, vertex)
         oper['flow'] = self.check_flowtable(introspect, vertex)
         oper['dropstats'] = self.check_dropstats(introspect, vertex)
         return oper
         
-
-    def check_routes(self, introspect, vertex):
-        return {}
-        '''
-        oper = defaultdict(dict)
-        for vrouter in self.svrouter.get_nodes():
-            introspect = self.svrouter.get_inspect_h(vrouter['ip_address'])
-            hostname = vrouter['hostname']
-            (check, route) = introspect.is_route_exists(self.source_vrf, self.dest_ip)
-            if not check:
-                print 'route for destip %s doesnt exist in source vrf %s'%(self.dest_ip, self.source_vrf)
-            print 'route exists for destip %s in source vrf %s'%(self.dest_ip, self.source_vrf)
-            oper['src_route'][hostname] = route
-
-        for vrouter in self.dvrouter.get_nodes():
-            introspect = self.dvrouter.get_inspect_h(vrouter['ip_address'])
-            hostname = vrouter['hostname']
-            (check, route) = introspect.is_route_exists(self.dest_vrf, self.source_ip)
-            if not check:
-                print 'route for srcip %s doesnt exist in dest vrf %s'%(self.source_ip, self.dest_vrf)
-            print 'route exists for srcip %s in dest vrf %s'%(self.source_ip, self.dest_vrf)
-            oper['dst_route'][hostname] = route
-        self.vertex['agent']['oper'].update(oper)
-        '''
-        pass
-
     def check_flowtable(self, introspect, vertex):
         flows = list()
         src_vrf_id = introspect.get_vrf_id(self.source_vrf)
@@ -125,8 +105,9 @@ class baseFlowVertex(baseVertex):
                 print 'SG drop'
             if flow['action_str'][0]['action'] != 'pass':
                 print 'Flow action Drop'
-        return flows
-
+        fwdflow = [flow for flow in flows if flow['reverse_flow'] == 'no']
+        revflow = [flow for flow in flows if flow['reverse_flow'] == 'yes']
+        return {'fwdflow': fwdflow, 'revflow': revflow}
 
     def check_dropstats(self, introspect, vertex):
         dropstats = defaultdict(dict)

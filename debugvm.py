@@ -2,10 +2,13 @@ import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
+import debugvmi
 
 class debugVertexVM(baseVertex):
-    dependant_vertexes = ['debugVertexVMI']
     vertex_type = 'virtual-machine'
+    def __init__(self, **kwargs):
+        self.dependant_vertexes = [debugvmi.debugVertexVMI]
+        super(debugVertexVM, self).__init__(**kwargs)
 
     def get_schema(self):
         #VMI, VM name, VM UUID
