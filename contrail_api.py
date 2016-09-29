@@ -279,6 +279,19 @@ class ContrailApi:
                                             de_ref, strip_obj_name, depth)
                 ret_list.extend(objs)
             return ret_list
+
+        if object_path_list_str and ',' in object_path_list_str:
+            ret_list = []
+            object_path_list = object_path_list_str.split(',')
+            for object_path in object_path_list:
+                if not object_path:
+                    continue
+                objs = self.get_object_deep(object_name, object_path,
+                                            object_dict, where, detail,
+                                            de_ref, strip_obj_name, depth)
+                ret_list.append(objs)
+            return [list(item) for item in zip(*ret_list)]
+                
         if object_path_list_str != None and object_path_list_str != '':
             object_path_list = object_path_list_str.split('.')
         else:
@@ -310,7 +323,14 @@ class ContrailApi:
             obj = object_dict[object_dict.keys()[0]]
             if cur_object in obj:
                 new_obj = obj[cur_object]
-                if type(new_obj) == list:
+                if cur_object == 'fq_name':
+                    obj = ':'.join(new_obj)
+                    ret_objs = self.get_object_deep(object_name, object_path_list_str, obj,
+                                                    where, detail, de_ref, strip_obj_name,
+                                                    depth = depth+1)
+                    ret_list = ret_list + ret_objs
+                    return ret_list
+                elif type(new_obj) == list:
                     for element in new_obj:
                         if self.is_ref(element):
                             obj = self.de_ref_obj(element)
@@ -322,6 +342,13 @@ class ContrailApi:
                             #    import pdb; pdb.set_trace()
                             ret_list = ret_list + ret_objs
                     return ret_list
+                elif self.is_ref(cur_object):
+                    obj = self.get_object(object_name, url=new_obj)
+                    ret_objs = self.get_object_deep(object_name, object_path_list_str, obj,
+                                                    where, detail, de_ref, strip_obj_name,
+                                                    depth = depth+1)
+                    ret_list = ret_list + ret_objs
+                    return ret_list
                 else:
                     #if new_obj == None:
                     #   pdb.set_trace()	
@@ -330,7 +357,7 @@ class ContrailApi:
                 pstr = 'Error: path %s not found, in %s, %s' % \
                        (cur_object, obj['display_name'], ':'.join(obj['fq_name']))
                 print pstr
-                return []
+                return [None]
 
         elif object_dict != None and depth == len(object_path_list):
             return [object_dict]
