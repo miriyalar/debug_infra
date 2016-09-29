@@ -2,10 +2,13 @@ import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
+import debugvmi
 
 class debugVertexSG(baseVertex):
-    dependant_vertexes = ['debugVertexVMI']
     vertex_type = 'security-group'
+    def __init__(self, **kwargs):
+        self.dependant_vertexes = [debugvmi.debugVertexVMI]
+        super(debugVertexSG, self).__init__(**kwargs)
 
     def process_self(self, vertex):
         agent = {}

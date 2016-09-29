@@ -126,8 +126,8 @@ class Introspect(object):
             resp = etree.fromstring(response.text)
             etodict = EtreeToDict().get_all_entry(resp)
             if etodict and ref:
-               etodict['ref'] = self._mk_url_str(path) 
-            return etodict 
+               etodict['ref'] = self._mk_url_str(path)
+            return etodict
         except etree.XMLSyntaxError:
             try:
                 return json.loads(response.text)
@@ -185,6 +185,9 @@ class SchemaIntrospect(Introspect):
         return ris
 
 class ControllerIntrospect(Introspect):
+    def get_pages(self, url_path):
+        pass
+
     def get_config(self, fq_name_str='', node_type=''):
         url_path = 'Snh_IFMapTableShowReq?table_name=%s&search_string=%s'%(node_type, fq_name_str)
         return self.get(path=url_path)
@@ -206,6 +209,20 @@ class ControllerIntrospect(Introspect):
         # Save url_dict_resp
         neighbors = url_dict_resp['ifmap_db'][0]['neighbors']
         return neighbors
+
+    def get_routes(self, vrf_fq_name):
+        url_path = 'Snh_ShowRouteReq?x=%s.inet.0'%vrf_fq_name
+        return self.get(path=url_path)
+
+    def is_route_exists(self, vrf_fq_name, address):
+        routes = self.get_routes(vrf_fq_name)
+        route_list = list()
+        for route in routes['tables'][0]['routes']:
+            if IPAddress(address) in IPNetwork(route['prefix']):
+                route_list.append(route)
+        if route_list:
+            return (True, route_list)
+        return (False, routes)
 
 class AgentIntrospect(Introspect):
     def get_intf_details(self, vmi_id=''):
@@ -260,16 +277,23 @@ class AgentIntrospect(Introspect):
 
     def is_route_exists(self, vrf_fq_name, address):
         routes = self.get_routes(vrf_fq_name)
+        if not routes.get('Inet4UcRouteResp') or routes['Inet4UcRouteResp'].get('route_list'):
+            self.log.debug('No route exists on vrf %s in %s'%(vrf_fq_name, self._ip))
+            return (False, [])
+        route_list = list()
         for route in routes['Inet4UcRouteResp']['route_list']:
             if IPAddress(address) in IPNetwork('%s/%s'%(route['src_ip'],
                                                         route['src_plen'])):
-               return (True, route)
+                route_list.append(route)
+        if route_list:
+            return (True, route_list)
+        self.log.debug('route for %s doesnt exist on vrf %s in %s'%(address, vrf_fq_name, self._ip))
         return (False, routes)
 
     def get_matching_flows(self, src_ip=None, dst_ip=None, protocol=None,
                            src_port=None, dst_port=None, src_vn=None,
                            dst_vn=None, src_nip=None, dst_nip=None,
-                           src_nvn=None, dst_nvn=None, 
+                           src_nvn=None, dst_nvn=None,
                            src_vrf_id=None, dest_vrf_id=None):
         matched_flows = list()
         flows = self.get_flows()

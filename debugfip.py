@@ -2,15 +2,16 @@ import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
+import debugvmi
 
 class debugVertexFIP(baseVertex):
-    dependant_vertexes = ['debugVertexVMI']
     vertex_type = 'floating-ip'
 
-    def __init__(self, context=None, **kwargs):
+    def __init__(self, **kwargs):
+        self.dependant_vertexes = [debugvmi.debugVertexVMI]
         self.floating_ip_address = kwargs.get('floating_ip_address', None)
         self.match_kv = {'floating_ip_address': self.floating_ip_address}
-        super(debugVertexFIP, self).__init__(context=context, **kwargs)
+        super(debugVertexFIP, self).__init__(**kwargs)
 
     def get_schema(self):
         schema_dict = {

@@ -2,12 +2,14 @@ import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
+import debugvm
+import debugvmi
 
 class debugVertexSI(baseVertex):
     vertex_type = 'service-instance'
-    dependant_vertexes = ['debugVertexVM', 'debugVertexVMI']
     def __init__(self, **kwargs):
         self.sc_name = None
+        self.dependant_vertexes = [debugvm.debugVertexVM, debugvmi.debugVertexVMI]
         super(debugVertexSI, self).__init__(**kwargs)
 
     def get_config_schema(self, vertex, schema_inspect_h):

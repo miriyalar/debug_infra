@@ -2,12 +2,13 @@ import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
+import debugvmi
 
 class debugVertexIP(baseVertex):
-    dependant_vertexes = ['debugVertexVMI']
     vertex_type = 'instance-ip'
 
-    def __init__(self, context=None, **kwargs):
+    def __init__(self, **kwargs):
+        self.dependant_vertexes = [debugvmi.debugVertexVMI]
         self.instance_ip_address = kwargs.get('instance_ip_address', None)
         self.ip_addr = dict()
         virtual_network = kwargs.get('virtual_network', None)
@@ -18,7 +19,7 @@ class debugVertexIP(baseVertex):
             self.match_kv.update({'virtual_network_refs.to': virtual_network.split(':')})
         else:
             self.match_kv.update({'virtual_network_refs.uuid': virtual_network})
-        super(debugVertexIP, self).__init__(context=context, **kwargs)
+        super(debugVertexIP, self).__init__(**kwargs)
 
     def get_schema(self):
         schema_dict = {

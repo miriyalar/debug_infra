@@ -14,19 +14,6 @@ def get_logger(name, **kwargs):
     loglevel = logging.DEBUG if verbose else logging.INFO
     return logger.getLogger(logger_name=name, console_level=loglevel)
 
-def create_vertex(vertex_type, **kwargs):
-    vertex = defaultdict(dict)
-    vertex.update({
-        'vertex_type': vertex_type,
-        'config': {},
-        'agent' : defaultdict(dict),
-        'control': defaultdict(dict),
-        'analytics': {'uve':{}},
-    })
-    for k,v in kwargs.iteritems():
-        vertex.update({k: v})
-    return vertex
-
 class baseVertex(object):
     '''Abstract Base Class for Vertex'''
     __metaclass__ = ABCMeta
@@ -142,24 +129,29 @@ class baseVertex(object):
         self.logger.debug('Remove' + str(self.context.get_path()))
 
     def _process_dependants(self, vertex, obj):
-        from debugvm import debugVertexVM
-        from debugvn import debugVertexVN
-        from debugvmi import debugVertexVMI
-        from debugsg import debugVertexSG
-        from debugip import debugVertexIP
-        from debugfip import debugVertexFIP
-        from debugsi import debugVertexSI
-        from debugsc import debugVertexSC
         element = self._create_element(vertex=vertex,
                                        **obj[self.vertex_type])
         for dependant_vertex in self.dependant_vertexes:
             self._add_to_context_path(element)
             self.dependent_vertex_objs.append(
-                 eval(dependant_vertex)(context=self.context, element=element))
+                 dependant_vertex(context=self.context, element=element))
             self._remove_from_context_path(element)
 
     def get_dependent_vertices(self):
         return self.dependent_vertex_objs
+
+    def create_vertex(self, vertex_type, **kwargs):
+        vertex = defaultdict(dict)
+        vertex.update({
+            'vertex_type': vertex_type,
+            'config': {},
+            'agent' : defaultdict(dict),
+            'control': defaultdict(dict),
+            'analytics': {'uve':{}},
+        })
+        for k,v in kwargs.iteritems():
+            vertex.update({k: v})
+        return vertex
 
     def get_vertex(self):
         return self.vertexes
@@ -168,7 +160,7 @@ class baseVertex(object):
         fq_name = config_obj[vertex_type].get('fq_name', uuid)
         if isinstance(fq_name, list):
             fq_name = ':'.join(fq_name)
-        vertex = create_vertex(vertex_type, uuid=uuid, fq_name=fq_name, depth=self.depth)
+        vertex = self.create_vertex(vertex_type, uuid=uuid, fq_name=fq_name, depth=self.depth)
         self.vertexes.append(vertex)
         self.context.add_vertex(vertex)
         return vertex
@@ -301,6 +293,12 @@ class baseVertex(object):
         ret = {}
         for hostname, inspect in self.get_vrouter_inspect_h(vertex):
             ret[hostname] = agent_oper_func(inspect, vertex)
+        return ret
+
+    def control_oper_db(self, control_oper_func, vertex):
+        ret = {}
+        for hostname, inspect in self.context.get_control_inspect_h():
+            ret[hostname] = control_oper_func(inspect, vertex)
         return ret
 
     def _store_config_schema(self, vertex):

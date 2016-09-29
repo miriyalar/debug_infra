@@ -2,10 +2,15 @@ import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
+import debugvmi
+import debugri
 
 class debugVertexVN(baseVertex):
-    dependant_vertexes = ['debugVertexVMI']
     vertex_type = 'virtual-network'
+
+    def __init__(self, **kwargs):
+        dependant_vertexes = [debugvmi.debugVertexVMI, debugri.debugVertexRI]
+        super(debugVertexVN, self).__init__(**kwargs)
 
     def process_self(self, vertex):
         agent = {}
