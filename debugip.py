@@ -54,35 +54,41 @@ class debugVertexIP(baseVertex):
         oper = {}
         instance_ip_address = self.ip_addr[vertex['uuid']]
         # Need to get the virtual-machine-interface record from the agent
-        vmi_uuid = None
+        vmis = list()
         adjacency_type='virtual-machine-interface'
         adjacency_list = inspect_h.get_adjacencies(uuid=vertex['fq_name'],
                                                    adjacency_type=adjacency_type)
         for adjacency in adjacency_list:
             if adjacency[0] == adjacency_type:
-                vmi_uuid = adjacency[2]
-                break
-        if not vmi_uuid:
+                vmis.append(adjacency[1])
+
+        if not vmis:
             self.logger.error("Agent Error, interface is not found in the adjancies of ip %s %s" % \
                               (vertex['vertex_type'], vertex['uuid']))
             return oper
-        intf_details = inspect_h.get_intf_details(vmi_id=vmi_uuid)
-        intf_rec = intf_details['ItfResp']['itf_list'][0]
-        oper['interface'] = intf_rec
+        for vmi in vmis:
+            # Need to do the WA of getting UUID from fqname since agent
+            # introspect for intf details doesnt accept fq_name
+            vmi_uuid = self.config.get_fqname_to_id(obj_type='virtual-machine-interface',
+                                                    fq_name=vmi)
+            intf_details = inspect_h.get_intf_details(vmi_id=vmi_uuid)
+            intf_rec = intf_details['ItfResp']['itf_list'][0]
+            oper['interface'] = intf_rec
 
-        ip_address = [oper['interface']['ip_addr']]
-        ip_address.extend(oper['interface']['fixed_ip4_list'] or [])
-        if instance_ip_address in ip_address:
-            pstr = "IP address %s is found in the interface rec %s" % \
-                   (instance_ip_address, intf_rec['name'])
-            self.logger.info(pstr)
-            print pstr
-        else:
-            pstr = "IP address %s is NOT found in the interface rec %s" % \
-                   (instance_ip_address, intf_rec['name'])
-            self.logger.error(pstr)
-            print pstr
-            return oper
+            ip_address = [oper['interface']['ip_addr']]
+            ip_address.extend(oper['interface']['fixed_ip4_list'] or [])
+            ip_address.extend([oper['interface']['ip6_addr']] or [])
+            if instance_ip_address in ip_address:
+                pstr = "IP address %s is found in the interface rec %s" % \
+                       (instance_ip_address, intf_rec['name'])
+                self.logger.info(pstr)
+                print pstr
+            else:
+                pstr = "IP address %s is NOT found in the interface rec %s" % \
+                       (instance_ip_address, intf_rec['name'])
+                self.logger.error(pstr)
+                print pstr
+                return oper
 
         # Get routing entry
         (check, route) = inspect_h.is_prefix_exists(intf_rec['vrf_name'],
