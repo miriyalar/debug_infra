@@ -34,6 +34,8 @@ class debugVertexSI(baseVertex):
                                           schema_to_use=schema_to_use,
                                           where='uuid=%s'%vertex['uuid'])
             for vmi in vmis:
+                if not vmi:
+                    continue
                 vmi = vmi['virtual-machine-interface']
                 if vmi['virtual_machine_interface_properties']['service_interface_type'] == 'right':
                     for iip_dict in vmi['instance_ip_back_refs']:
