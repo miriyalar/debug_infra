@@ -7,6 +7,7 @@ class Context(object):
     def __init__(self, **kwargs):
         self.path = list()
         self.visited_vertexes_inorder = list()
+        self.vrouters = set()
         self.config_ip = kwargs.get('config_ip')
         self.config_port = kwargs.get('config_port')
         self.auth_ip = kwargs.get('auth_ip')
@@ -73,8 +74,8 @@ class Context(object):
     def status(self):
         if not getattr(self, '_status', None):
             (c_status, h_status, a_status) = ClusterStatus(token=self.token,
-                                             config_ip=self.config_ip,
-                                             config_port=self.config_port).get()
+                                                           config_ip=self.config_ip,
+                                                           config_port=self.config_port).get(vrouters=self.vrouters)
             status = dict()
             status['cluster_status'] = c_status
             status['host_status'] = h_status
@@ -119,6 +120,15 @@ class Context(object):
                           }
         self.visited_vertexes_inorder.append(vertex_summary)
         self._map_uuid_to_vertex(vertex)
+
+    def add_vrouter(self, nodes, vertex_type, uuid, fq_name):
+        for node in nodes or []:
+            hostname = node.get('hostname', None)
+            if hostname:
+                self.vrouters.add(hostname)
+
+    def get_vrouters(self):
+        return self.vrouters
 
     def get_vertex_of_uuid(self, uuid):
         return self.uuid_to_vertex[uuid]

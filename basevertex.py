@@ -70,7 +70,7 @@ class baseVertex(object):
         self.control = self.context.control
         self.analytics = self.context.analytics
         self.schema = self.context.schema
-        self.context.get_cluster_status()
+        #self.context.get_cluster_status()
 
     def get_vrouter_info(self, vertex):
         contrail_info = ContrailUtils(token=self.token).get_contrail_info(
@@ -105,9 +105,12 @@ class baseVertex(object):
             self.store_analytics_uves(vertex)
             if self.non_config_obj == False:
                 self.vrouter[uuid] = self.get_vrouter_info(vertex)
-                if not self.vrouter[uuid].get_nodes():
+                vrouter_nodes = self.vrouter[uuid].get_nodes()
+                if not vrouter_nodes:
                     self.logger.error('Unable to find vrouter for %s:%s' % (self.vertex_type,
                                                                        uuid))
+                self.context.add_vrouter(vrouter_nodes, self.vertex_type, 
+                                         uuid, obj[vertex_type]['fq_name'])
                 self.store_agent_config(vertex)
                 self.process_self(vertex)
             if self.depth == self.context.depth:

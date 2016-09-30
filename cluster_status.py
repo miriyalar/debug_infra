@@ -12,7 +12,7 @@ class ClusterStatus(object):
         self.config_port = config_port
         self.config_api = config_api
     
-    def get(self, uuid_type=None, uuid=None):
+    def get(self, uuid_type=None, uuid=None, vrouters=None):
         contrail_status = defaultdict(dict)
         host_status = defaultdict(dict)
         alarm_status = defaultdict(dict)
@@ -35,9 +35,10 @@ class ClusterStatus(object):
                     alarm_status[hostname][node_type.replace('_', '-')[:-1]] = node_status['UVEAlarms']
 
         contrail_status['vrouter'] = list()
-        for node in contrail['vrouter']:
+        if not vrouters:
+            vrouters = [node['hostname'] for node in contrail['vrouter']]
+        for hostname in vrouters:
             node_type = 'vrouter'
-            hostname = node['hostname']
             node_status = uve.get_object(hostname, node_type, 
                                          select_fields=['NodeStatus.process_status', 'VrouterAgent.xmpp_peer_list','UVEAlarms'], 
                                          found_error=False)

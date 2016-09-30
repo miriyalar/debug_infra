@@ -121,6 +121,7 @@ class vertexPrint(object):
 #            vertex_dict['refs'] = vertex_obj['refs']
         objs['summary_of_visited_vertexes'] = vv_in_order
 #        objs['cluster_status'] = context.get_cluster_status()
+        cluster_status = context.get_cluster_status()
         objs['alarm_status'] = context.get_cluster_alarm_status()
         objs['host_status'] = context.get_cluster_host_status()
         objs['visited_vertexes'] = visited_vertices
