@@ -58,7 +58,7 @@ debug<vertex> codes adds the operational db related information, which can't be 
 particular use case and also may perform verfication of data to report errors/warnings.
 
 baseVertexFlow class:
-Flow classes inherits this baseVertexFlow class, which takes four-tuple and VN as input and gathers flow related information from all relavant contrail nodes.
+Flow classes inherit baseVertexFlow class, which takes four-tuple and VN as input and gathers flow related information from all relavant contrail nodes.
 
 introspect class:
 This class provides handler to introspect for given ip/port. This provides methods to convert introspect xml to python dict objects.
