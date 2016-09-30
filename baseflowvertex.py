@@ -8,7 +8,6 @@ from vertex_print import vertexPrint
 from utils import DictDiffer
 from basevertex import get_logger, baseVertex
 from contrailnode_api import Vrouter
-from context import Context
 import time
 import debugroute
 
