@@ -1,5 +1,6 @@
 import os
 import json
+import types
 from collections import OrderedDict
 
 class Utils():
@@ -28,7 +29,9 @@ class Utils():
                 isinstance(v2, dict) ):
                 Utils.merge_dict(v1, v2)
             elif isinstance(v1, list):
-                if isinstance(v2, list):
+                if isinstance(v2, types.NoneType):
+                    continue
+                elif isinstance(v2, list):
                     v1.extend(v2)
                 else:
                     v1.append(v2)

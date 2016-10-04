@@ -23,11 +23,11 @@ class debugVertexSG(baseVertex):
         sg_uuid = vertex['uuid']
         oper = {}
         sg_info = introspect.get_sg_details(sg_uuid)
-        if len(sg_info['SgListResp']['sg_list']) == 1:
+        if len(sg_info['SgListResp']['sg_list'] or []) == 1:
             sg_rec = sg_info['SgListResp']['sg_list'][0]
             oper[vertex['vertex_type']] = sg_rec
         else:
-            error = True
+            return oper
 
         egress_acl_uuid = sg_rec['egress_acl_uuid']
         ingress_acl_uuid = sg_rec['ingress_acl_uuid']

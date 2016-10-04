@@ -25,12 +25,12 @@ class debugVertexVN(baseVertex):
         vn_uuid = vertex['uuid']
         oper = {}
         vn_info = introspect.get_vn_details(vn_uuid)
-        if len(vn_info['VnListResp']['vn_list']) == 1:
+        if len(vn_info['VnListResp']['vn_list'] or []) == 1:
             vn_rec = vn_info['VnListResp']['vn_list'][0]
             oper[vertex['vertex_type']] = vn_rec
         else:
             error = True
-            pstr = "Got more vn records, supposed to have one for uuid %d" % (vn_uuid)
+            pstr = "Got more vn records, supposed to have one for uuid %s" % (vn_uuid)
             self.logger.error(pstr)
             print pstr
         pstr = "Agent Verified virtual network %s %s" % (vn_uuid, 'with errors' if error else '')

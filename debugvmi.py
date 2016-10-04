@@ -52,7 +52,9 @@ class debugVertexVMI(baseVertex):
         oper = {}
         vmi_uuid = vertex['uuid']
         intf_details = introspect.get_intf_details(vmi_id=vmi_uuid)
-        if len(intf_details['ItfResp']['itf_list']) == 1:
+        if not intf_details or not intf_details.get('ItfResp'):
+            return oper
+        if len(intf_details['ItfResp'].get('itf_list') or []) == 1:
             intf_rec = intf_details['ItfResp']['itf_list'][0]
         else:
             pstr = "Agent Error interface uuid %s, doesn't exist" % (vmi_uuid)

@@ -66,9 +66,6 @@ class baseFlowVertex(baseVertex):
         return Vrouter(self.vrouters)
 
     def process_self(self, vertex):
-        vertex['route_uuid'] = debugroute.get_route_uuid(prefix=self.dest_ip,
-                                                     ri_fqname=self.dest_vrf,
-                                                     vrouters=self.vrouters)
         agent = {}
         agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex)
         self._add_agent_to_context(vertex, agent)
@@ -76,22 +73,59 @@ class baseFlowVertex(baseVertex):
         control['oper'] = {}
         self._add_control_to_context(vertex, control)
 
+    def get_element(self, vertex, vrf_name):
+        element = self._create_element(vertex, prefix=self.dest_ip,
+                                       vrouters=self.get_vrouters(vertex),
+                                       ri_fqname=vrf_name)
+        return element
+
     def _get_agent_oper_db(self, introspect, vertex):
-        oper = {}
+        oper = defaultdict(list)
+        # Check Agent FlowTable
         oper['flow'] = self.check_flowtable(introspect, vertex)
+        flow_ids = [flow['flow_handle'] for flow in oper['flow']['fwdflow'] + oper['flow']['revflow']]
+        # Check Vrouter Kernel FlowTable
+        oper['kflow'] = self.check_kflowtable(introspect, vertex, flow_ids)
+        # Check Dropstats
         oper['dropstats'] = self.check_dropstats(introspect, vertex)
+        # Check Route Tables
+        for flow in oper['flow']['fwdflow'] + oper['flow']['revflow']:
+            vrf_fqname = introspect.get_vrf_fqname(vrf_index=flow['dest_vrf'])
+            debugroute.debugVertexRoute(context=self.context,
+                                        element=self.get_element(vertex,
+                                                                 vrf_fqname))
+            oper['routes'].append(debugroute.get_route_uuid(prefix=self.dest_ip,
+                                             ri_fqname=vrf_fqname,
+                                             vrouters=self.get_vrouters(vertex)))
         return oper
-        
+
+    def check_kflowtable(self, introspect, vertex, flow_ids):
+        self.src_vrf_id = introspect.get_vrf_id(self.source_vrf)
+        self.dest_vrf_id = introspect.get_vrf_id(self.dest_vrf)
+        flow = introspect.get_matching_kflows(self.source_ip, self.dest_ip,
+                                             self.protocol, self.source_port,
+                                             self.dest_port, self.source_nip,
+                                             self.dest_nip, self.src_vrf_id,
+                                             self.dest_vrf_id, flow_ids=flow_ids)
+        if flow:
+            print 'Found matching %s kernel flow on agent %s, sip %s and dip %s ' % (len(flow), introspect._ip, 
+                                                                              self.source_ip, self.dest_ip)
+        else:
+            print 'Unable to find matching kernel flow on agent %s for sip %s, dip %s, snip %s, dnip %s, svn %s, dvn %s' % \
+                (introspect._ip, self.source_ip, self.dest_ip, self.source_nip, self.dest_nip, \
+                 self.src_vn_fqname, self.dest_vn_fqname)
+        return flow
+
     def check_flowtable(self, introspect, vertex):
         flows = list()
-        src_vrf_id = introspect.get_vrf_id(self.source_vrf)
-        dest_vrf_id = introspect.get_vrf_id(self.dest_vrf)
+        self.src_vrf_id = introspect.get_vrf_id(self.source_vrf)
+        self.dest_vrf_id = introspect.get_vrf_id(self.dest_vrf)
         flow = introspect.get_matching_flows(self.source_ip, self.dest_ip,
                                              self.protocol, self.source_port,
                                              self.dest_port, self.src_vn_fqname,
                                              self.dest_vn_fqname, self.source_nip,
                                              self.dest_nip, self.src_nvn_fqname, self.dest_nvn_fqname,
-                                             src_vrf_id, dest_vrf_id)
+                                             self.src_vrf_id, self.dest_vrf_id)
         if flow:
             print 'Found matching %s flow on agent %s, sip %s and dip %s ' % (len(flow), introspect._ip, 
                                                                               self.source_ip, self.dest_ip)
@@ -112,14 +146,14 @@ class baseFlowVertex(baseVertex):
     def check_dropstats(self, introspect, vertex):
         dropstats = defaultdict(dict)
         dropstats['src_initial'] = introspect.get_dropstats()
+        initial = dropstats['src_initial']
         for i in range(2):
             time.sleep(5)
             current = introspect.get_dropstats()
-            initial = dropstats['src_initial']
             dropstats['src_diff_'+str(i)] = {key:current[key]
                                              for key in DictDiffer(current, initial).changed()}
+            initial = current
         return dropstats
-
 
 def parse_args(args):
     parser = ArgumentParser(description='Debug utility for Flow', add_help=True)
