@@ -6,11 +6,14 @@ from contrail_uve import ContrailUVE
 from collections import defaultdict
 
 class ClusterStatus(object):
-    def __init__(self, config_ip='127.0.0.1', config_port='8082', config_api=None, token=None):
+    def __init__(self, config_ip='127.0.0.1', config_port='8082', 
+                 analytics_ip=None, analytics_port=None, config_api=None, token=None):
         self.token = token
         self.config_ip = config_ip
         self.config_port = config_port
         self.config_api = config_api
+        self.analytics_ip = analytics_ip
+        self.analytics_port = analytics_port
     
     def get(self, uuid_type=None, uuid=None, vrouters=None):
         contrail_status = defaultdict(dict)
@@ -18,8 +21,8 @@ class ClusterStatus(object):
         alarm_status = defaultdict(dict)
         contrail = ContrailUtils(token=self.token).get_contrail(self.config_ip, self.config_port, 
                                                                 uuid_type=uuid_type, uuid=uuid)
-        analytics_ip = contrail['control']['analytics_nodes'][0]['ip_address']
-        analytics_port = contrail['control']['analytics_nodes'][0]['port']
+        analytics_ip = self.analytics_ip or contrail['control']['analytics_nodes'][0]['ip_address']
+        analytics_port = self.analytics_port or contrail['control']['analytics_nodes'][0]['port']
         uve = ContrailUVE(ip=analytics_ip, port=analytics_port, token=self.token)
         for node_type, node_list  in contrail['control'].iteritems():
             #contrail_status['control'][node_type] = list()

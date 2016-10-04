@@ -78,9 +78,11 @@ class baseVertex(object):
                                                         vertex['vertex_type'],
                                                         config_ip=self.config_ip,
                                                         config_port=self.config_port,
+                                                        analytics_ip=self.context.analytics_ip,
+                                                        analytics_port=self.context.analytics_port,
                                                         context_path=self.context.get_path(),
                                                         fq_name=vertex['fq_name'])
-        vrouter = Vrouter(contrail_info['vrouter'])
+        vrouter = Vrouter(contrail_info['vrouter'], port=self.context.agent_port)
         return vrouter
 
     def get_context(self):
