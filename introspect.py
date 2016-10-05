@@ -66,6 +66,8 @@ class EtreeToDict(object):
                 val.update({elem.tag: rval[elem.tag]})
             elif 'SandeshData' in elem.tag:
                 val.update({xp.tag: rval})
+            elif elem.get('type') == "sandesh":
+                val.update(rval)
             else:
                 val.update({elem.tag: rval})
         return val
@@ -322,16 +324,16 @@ class AgentIntrospect(Introspect):
     def get_vrf_fqname(self, vrf_index):
         url_path = 'Snh_Inet4UcRouteReq?vrf_index=%s'%vrf_index
         routes = self.get(path=url_path)
-        if not routes or not routes.get('Inet4UcRouteResp'):
+        if not routes or not routes.get('route_list'):
             self.log.debug('Unable to find vrf_name of vrf_id %s'%vrf_index)
-        return routes['Inet4UcRouteResp']['route_list'][0]['src_vrf']
+        return routes['route_list'][0]['src_vrf']
 
     def get_vrf_id(self, vrf_fqname):
         if not vrf_fqname:
             return None
         url_path = 'Snh_VrfListReq?name=%s'%vrf_fqname
         response = self.get(url_path)
-        return [x['ucindex'] for x in response['VrfListResp']['vrf_list'] if x['name'] == vrf_fqname][0]
+        return [x['ucindex'] for x in response['vrf_list'] if x['name'] == vrf_fqname][0]
 
     def is_prefix_exists(self, vrf_fq_name, prefix, plen=32):
         (exists, routes) = self.is_route_exists(vrf_fq_name, prefix)
@@ -343,11 +345,11 @@ class AgentIntrospect(Introspect):
 
     def is_route_exists(self, vrf_fq_name, address, lpm=False):
         routes = self.get_routes(vrf_fq_name)
-        if not routes.get('Inet4UcRouteResp') or not routes['Inet4UcRouteResp'].get('route_list'):
+        if not routes or not routes.get('route_list'):
             self.log.debug('No route exists on vrf %s in %s'%(vrf_fq_name, self._ip))
             return (False, [])
         route_list = list()
-        for route in routes['Inet4UcRouteResp']['route_list']:
+        for route in routes['route_list']:
             if IPAddress(address) in IPNetwork('%s/%s'%(route['src_ip'],
                                                         route['src_plen'])):
                 route_list.append(route)

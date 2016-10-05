@@ -36,8 +36,8 @@ class debugVertexVM(baseVertex):
         vm_uuid = vertex['uuid']
         vm_info = introspect.get_vm_details(vm_uuid)
         oper['vm'] = vm_info
-        if len(vm_info['VmListResp']['vm_list'] or []) == 1:
-            vm_rec = vm_info['VmListResp']['vm_list'][0]
+        if len(vm_info['vm_list'] or []) == 1:
+            vm_rec = vm_info['vm_list'][0]
             if vm_uuid == vm_rec['uuid']:
                 pstr  = "Agent VM %s is present" % (vm_uuid)
                 self.logger.debug(pstr)

@@ -72,7 +72,7 @@ class debugVertexIP(baseVertex):
             vmi_uuid = self.config.get_fqname_to_id(obj_type='virtual-machine-interface',
                                                     fq_name=vmi)
             intf_details = inspect_h.get_intf_details(vmi_id=vmi_uuid)
-            intf_rec = intf_details['ItfResp']['itf_list'][0]
+            intf_rec = intf_details['itf_list'][0]
             oper['interface'] = intf_rec
 
             ip_address = [oper['interface']['ip_addr']]
