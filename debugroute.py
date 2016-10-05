@@ -99,7 +99,7 @@ class debugVertexRoute(baseVertex):
             nh = route.get('nh_id')
             if nh:
                 knh.extend(introspect.get_knh(route['nh_id']))
-        return {'route': route, 'kroute': kroute, 'knh': nh}
+        return {'route': route, 'kroute': kroute, 'knh': knh}
 
     def _get_control_oper_db(self, introspect, vertex):
         (exists, route) = introspect.is_route_exists(self.ri[vertex['uuid']],
