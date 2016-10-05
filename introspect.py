@@ -408,7 +408,7 @@ class AgentIntrospect(Introspect):
                 continue
             if vrf_set and flow['dest_vrf'] not in vrf_set:
                 continue
-            if not natip_set & set([flow['sip'], flow['dip']]):
+            if natip_set and not natip_set & set([flow['sip'], flow['dip']]):
                 self.log.warn('We expect the flow to be natted to '
                               '%s where as it isnt'%natip_set)
             matched_flows.append(flow)
