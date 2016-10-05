@@ -29,7 +29,7 @@ class baseVertex(object):
         self.config_objs = {}
         self.dependent_vertex_objs = list()
         if not context:
-            self.context = Context(**kwargs)
+            self.context = Context(vertex_type=self.vertex_type, **kwargs)
         else:
             self.context = context
         if self._is_vertex_type_exists_in_path():

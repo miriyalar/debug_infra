@@ -4,9 +4,10 @@ from contrail_utils import ContrailUtils
 from cluster_status import ClusterStatus
 
 class Context(object):
-    def __init__(self, **kwargs):
+    def __init__(self, vertex_type, **kwargs):
         self.path = list()
         self.visited_vertexes_inorder = list()
+        self.debugged_vertex = vertex_type
         self.vrouters = set()
         self.config_ip = kwargs.get('config_ip')
         self.config_port = kwargs.get('config_port')
@@ -105,6 +106,9 @@ class Context(object):
 
     def get_cluster_host_status(self):
         return self.status.get('host_status', None)
+
+    def get_debugged_vertex(self):
+        return self.debugged_vertex
 
     def get_path(self):
         return self.path

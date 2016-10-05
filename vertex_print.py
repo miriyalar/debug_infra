@@ -4,127 +4,48 @@ from utils import Utils
 from collections import OrderedDict
 
 class vertexPrint(object):
-    context = None
     def __init__(self, vertex, **kwargs):
         detail = kwargs.get('verbose', False)
         self.vertex = vertex
-        #self._visited_vertexes(context, detail=True)
-        #self._visited_vertexes_brief(context)
-        #self._context_path(context)
+        self.context = vertex.get_context()
 
-    def _visited_vertexes(self, context, detail=False):
-        print 'Visited vertexs:'
-        for k,v in context['visited_nodes'].iteritems():
-            pprint(k + ':')
-            pprint(v, indent=4)
+    def get_sorted_vv_summary(self, vertices):
+        vertex_type = self.context.get_debugged_vertex()
+        insert_at = 0
+        for i in range(len(vertices)):
+            if vertices[i]['vertex_type'] == vertex_type:
+                if i == 0:
+                    insert_at = 1
+                    continue
+                val = vertices.pop(i)
+                vertices.insert(insert_at, val)
+                insert_at = insert_at + 1
+        return vertices
 
-    def _visited_vertexes_brief(self, context = None):
-        if context == None:
-            context = self.context
-        print 'Visited vertexes brief:'
-        for vertex in context['visited_vertexes_brief']:
-            pprint(vertex['vertex_type'] + ',' + vertex['fq_name'])
-            pprint(vertex, indent=4)
-
-    def _context_path(self, context):
-        print 'Visited path:'
-        pprint(context['path'])
-
-    def _print_config_brief(self, obj, select_list = []):
-        #brief_fields_list = ['fq_name', 'href', 'display_name'] + select_list
-        brief_fields_list = ['fq_name', 'uuid', 'display_name'] + select_list
-        config_objs = obj.get('config', {})
-        for hostname, config_obj in config_objs.iteritems():
-            obj_type = config_obj.keys()[0]
-            obj = config_obj[obj_type]
-            print('    {}'.format(obj_type))
-            #pprint('vertex_type= ' + obj_type, indent = 8)
-            for brief_field in brief_fields_list:
-                if brief_field not in obj:
-                    print 'Attribute not found in object\n'
-                if brief_field == 'fq_name':
-                    filed_value = ':'.join(obj[brief_field])
-                else:
-                    filed_value = obj[brief_field]
-                print('      {}'.format('%s : %s'%(brief_field, filed_value)))
-
-
-    def print_visited_nodes(self, context, select_list = [], detail = False):
-        print 'print_visited_nodes'
-        visited_vertexes = context.get('visited_vertexes', [])
-        for k,v in visited_vertexes.iteritems():
-            #print the UUID
-            print('  {}'.format(k))
-            #pprint(k, indent=4)
-            #if detail is not mentioned
-            if not detail:
-                self._print_config_brief(v, select_list)
-            else:
-                pprint(v, indent = 2)
-            #Print the service specific data
-            #pprint(v[agent])
-
-
-    def print_visited_vertexes_inorder(self, context):
-        print 'print_visited_vertexes_inorder'
-        visited_vertexes = context.get('visited_vertexes_inorder', [])
-        for vertex in visited_vertexes:
-            filed_print_order = ['vertex_type', 'fq_name', 'uuid', 'display_name']
-            for f in filed_print_order:
-                if f == 'vertex_type':
-                    print('  {}'.format('%s'%(vertex[f])))
-                else:
-                    print('      {}'.format('%s : %s'%(f, vertex[f])))
-
-    def print_object_based_on_uuid(self, uuid, context, detail = False):
-        print 'print_object_based_on_uuid'
-        visited_vertexes = context.get('visited_vertexes', [])
-        if not uuid in visited_vertexes:
-            print 'Object not found'
-        else:
-            if not detail:
-                self._print_config_brief(visited_vertexes[uuid], [] )
-            else:
-                pprint(visited_vertexes[uuid], indent = 2)
-
-
-    def print_object_catalogue(self, detail):
-        print 'print_object_catalogue'
-        vertexes = self._get_merged_vertex(self.vertex)
-        for k,v in vertexes.iteritems():
-            #print('  {}'.format(k))
-            for item in v:
-                if not detail:
-                    self._print_config_brief(item)
-                else:
-                    pprint(item, indent = 2)
-
-    @staticmethod
-    def _merge_list_of_dicts(list1, list2):
-        list1.extend([x for x in list2 if x not in list1])
-
+    def get_sorted_vv(self, vertices):
+        new_dict = OrderedDict()
+        vertex_type = self.context.get_debugged_vertex()
+        val = vertices.pop(vertex_type)
+        new_dict.update({vertex_type: val})
+        new_dict.update(vertices)
+        return new_dict
 
     def _get_objects_from_context(self, object_type=None):
         objs = OrderedDict()
         visited_vertices = OrderedDict()
         if type(self.vertex) is not list:
             self.vertex = [self.vertex]
-#        for vertex in self.vertex:
-#            context = vertex.get_context()
-#            Utils.merge_dict(visited_vertices, self._get_merged_vertex(vertex))
-        context = self.vertex[0].get_context()
-        vv_in_order = context.get_visited_vertices()
+        vv_in_order = self.context.get_visited_vertices()
         for vertex_dict in vv_in_order:
-            vertex_obj = context.get_vertex_of_uuid(vertex_dict['uuid'])
+            vertex_obj = self.context.get_vertex_of_uuid(vertex_dict['uuid'])
             vertex_dict['depth'] = vertex_obj['depth']
             Utils.merge_dict(visited_vertices, {vertex_obj['vertex_type']: [vertex_obj]})
 #            vertex_dict['refs'] = vertex_obj['refs']
-        objs['summary_of_visited_vertexes'] = vv_in_order
+        objs['summary_of_visited_vertexes'] = self.get_sorted_vv_summary(vv_in_order)
 #        objs['cluster_status'] = context.get_cluster_status()
-        cluster_status = context.get_cluster_status()
-        objs['alarm_status'] = context.get_cluster_alarm_status()
-        objs['host_status'] = context.get_cluster_host_status()
-        objs['visited_vertexes'] = visited_vertices
+        objs['alarm_status'] = self.context.get_cluster_alarm_status()
+        objs['host_status'] = self.context.get_cluster_host_status()
+        objs['visited_vertexes'] = self.get_sorted_vv(visited_vertices)
         return objs
 
     def convert_json(self, object_type=None, detail=True, file_name='debug_vertexes_output.json'):

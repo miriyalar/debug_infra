@@ -23,24 +23,24 @@ class debugVertexSG(baseVertex):
         sg_uuid = vertex['uuid']
         oper = {}
         sg_info = introspect.get_sg_details(sg_uuid)
-        if len(sg_info['SgListResp']['sg_list']) == 1:
-            sg_rec = sg_info['SgListResp']['sg_list'][0]
+        if len(sg_info['sg_list'] or []) == 1:
+            sg_rec = sg_info['sg_list'][0]
             oper[vertex['vertex_type']] = sg_rec
         else:
-            error = True
+            return oper
 
         egress_acl_uuid = sg_rec['egress_acl_uuid']
         ingress_acl_uuid = sg_rec['ingress_acl_uuid']
         url_dict_resp = introspect.get_acl_details(egress_acl_uuid)
-        if len(url_dict_resp['AclResp']['acl_list']) == 1:
-            egress_acl_rec = url_dict_resp['AclResp']['acl_list'][0]
+        if len(url_dict_resp['acl_list']) == 1:
+            egress_acl_rec = url_dict_resp['acl_list'][0]
             oper['egress_acl'] = egress_acl_rec
         else:
             error = True
 
         url_dict_resp = introspect.get_acl_details(ingress_acl_uuid)
-        if len(url_dict_resp['AclResp']['acl_list']) == 1:
-            ingress_acl_rec = url_dict_resp['AclResp']['acl_list'][0]
+        if len(url_dict_resp['acl_list']) == 1:
+            ingress_acl_rec = url_dict_resp['acl_list'][0]
             oper['ingress_acl'] = ingress_acl_rec
         else:
             error = True

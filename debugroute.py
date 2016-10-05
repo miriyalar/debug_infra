@@ -84,13 +84,29 @@ class debugVertexRoute(baseVertex):
         self._add_control_to_context(vertex, control)
 
     def _get_agent_oper_db(self, introspect, vertex):
-        (check, route) = introspect.is_route_exists(self.ri[vertex['uuid']],
+        knh = list()
+        (exists, route) = introspect.is_route_exists(self.ri[vertex['uuid']],
                                                     self.prefix)
-        return {'route': route}
+        if not exists:
+            self.logger.warn('Route for %s doesnt exist in VRF %s of agent %s'%(
+                          self.prefix, self.ri[vertex['uuid']], introspect._ip))
+        (exists, kroute) = introspect.is_kroute_exists(self.prefix,
+                                      vrf_fq_name=self.ri[vertex['uuid']])
+        if not exists:
+            self.logger.warn('Route for %s doesnt exist in VRF %s of kernel %s'%(
+                          self.prefix, self.ri[vertex['uuid']], introspect._ip))
+        for route in kroute:
+            nh = route.get('nh_id')
+            if nh:
+                knh.extend(introspect.get_knh(route['nh_id']))
+        return {'route': route, 'kroute': kroute, 'knh': knh}
 
     def _get_control_oper_db(self, introspect, vertex):
-        (check, route) = introspect.is_route_exists(self.ri[vertex['uuid']],
+        (exists, route) = introspect.is_route_exists(self.ri[vertex['uuid']],
                                                     self.prefix)
+        if not exists:
+            self.logger.warn('Route for %s doesnt exist in VRF %s of control %s'%(
+                          self.prefix, self.ri[vertex['uuid']], introspect._ip))
         return {'route': route}
 
 def parse_args(args):
