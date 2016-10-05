@@ -95,10 +95,10 @@ class debugVertexRoute(baseVertex):
         if not exists:
             self.logger.warn('Route for %s doesnt exist in VRF %s of kernel %s'%(
                           self.prefix, self.ri[vertex['uuid']], introspect._ip))
-        for route in kroute:
-            nh = route.get('nh_id')
+        for rt in kroute:
+            nh = rt.get('nh_id')
             if nh:
-                knh.extend(introspect.get_knh(route['nh_id']))
+                knh.extend(introspect.get_knh(rt['nh_id']))
         return {'route': route, 'kroute': kroute, 'knh': knh}
 
     def _get_control_oper_db(self, introspect, vertex):
