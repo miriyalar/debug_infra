@@ -382,7 +382,8 @@ class AgentIntrospect(Introspect):
         flows = self.get_flows()
         if not flows:
             return matched_flows
-        ip_set = set([src_ip, dst_ip] + list(src_nip or []) + list(dst_nip or []))
+        natip_set = set(list(src_nip or []) + list(dst_nip or []))
+        ip_set = set([src_ip, dst_ip] + list(natip_set))
         vn_set = set([src_vn, dst_vn, src_nvn, dst_nvn])
         vrf_set = set([src_vrf_id, dest_vrf_id])
         ip_set.discard(None); ip_set.discard('')
@@ -407,6 +408,9 @@ class AgentIntrospect(Introspect):
                 continue
             if vrf_set and flow['dest_vrf'] not in vrf_set:
                 continue
+            if not natip_set & set([flow['sip'], flow['dip']]):
+                self.log.warn('We expect the flow to be natted to '
+                              '%s where as it isnt'%natip_set)
             matched_flows.append(flow)
         return matched_flows
 
