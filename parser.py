@@ -58,6 +58,16 @@ class ArgumentParser(argparse.ArgumentParser):
                                 'CONFIG_IP', '127.0.0.1')
             pargs['config_port'] = self.read_config_option(config, 'contrail',
                                 'CONFIG_PORT', '8082')
+            pargs['analytics_ip'] = self.read_config_option(config, 'contrail',
+                                'ANALYTICS_IP', '')
+            pargs['analytics_port'] = self.read_config_option(config, 'contrail',
+                                'ANALYTICS_PORT', '8081')
+            pargs['control_port'] = self.read_config_option(config, 'contrail',
+                                'CONTROL_PORT', '8083')
+            pargs['agent_port'] = self.read_config_option(config, 'contrail',
+                                'AGENT_PORT', '8085')
+            pargs['schema_transformer_port'] = self.read_config_option(config, 'contrail',
+                                'SCHEMA_TRANSFORMER_PORT', '8087')
         else:
             raise Exception('Unable to read the ini file %s'%pargs['config'])
         return pargs

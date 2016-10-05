@@ -10,13 +10,13 @@ class ContrailNodes:
         self.control = []
 
 class AnalyticsNode:
-    def __init__(self, analytics_nodes, token=None):
+    def __init__(self, analytics_nodes, port=None, token=None):
         self._analytics_nodes = analytics_nodes
         self._analytics_api = None
         self.token = token
         for node in analytics_nodes:
             self._analytics_api = ContrailUVE(ip=node['ip_address'],
-                                              port=node['port'],
+                                              port=port or node['port'],
                                               token=self.token)
             break
 
@@ -132,16 +132,16 @@ class IntrospectNode(object):
         return self.handles[ip]
 
 class Vrouter(IntrospectNode):
-    def __init__(self, vrouter_nodes):
-        super(Vrouter, self).__init__(vrouter_nodes, AgentIntrospect)
+    def __init__(self, vrouter_nodes, port=None):
+        super(Vrouter, self).__init__(vrouter_nodes, AgentIntrospect, port=port)
 
 class ControlNode(IntrospectNode):
-    def __init__(self, control_nodes):
-        super(ControlNode, self).__init__(control_nodes, ControllerIntrospect)
+    def __init__(self, control_nodes, port=None):
+        super(ControlNode, self).__init__(control_nodes, ControllerIntrospect, port=port)
 
 class SchemaNode(IntrospectNode):
-    def __init__(self, config_nodes):
-        super(SchemaNode, self).__init__(config_nodes, SchemaIntrospect, port=8087)
+    def __init__(self, config_nodes, port=None):
+        super(SchemaNode, self).__init__(config_nodes, SchemaIntrospect, port=port)
         for node in config_nodes:
             inspect = super(SchemaNode, self).get_inspect_h(node['ip_address'])
             if not inspect.is_service_up():

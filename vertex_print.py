@@ -42,6 +42,7 @@ class vertexPrint(object):
             Utils.merge_dict(visited_vertices, {vertex_obj['vertex_type']: [vertex_obj]})
 #            vertex_dict['refs'] = vertex_obj['refs']
         objs['summary_of_visited_vertexes'] = self.get_sorted_vv_summary(vv_in_order)
+#        objs['cluster_status'] = context.get_cluster_status()
         objs['alarm_status'] = self.context.get_cluster_alarm_status()
         objs['host_status'] = self.context.get_cluster_host_status()
         objs['visited_vertexes'] = self.get_sorted_vv(visited_vertices)

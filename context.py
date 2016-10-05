@@ -8,6 +8,7 @@ class Context(object):
         self.path = list()
         self.visited_vertexes_inorder = list()
         self.debugged_vertex = vertex_type
+        self.vrouters = set()
         self.config_ip = kwargs.get('config_ip')
         self.config_port = kwargs.get('config_port')
         self.auth_ip = kwargs.get('auth_ip')
@@ -16,6 +17,11 @@ class Context(object):
         self.admin_password = kwargs.get('password')
         self.admin_username = kwargs.get('username')
         self.admin_tenant_name = kwargs.get('tenant')
+        self.analytics_ip = kwargs.get('analytics_ip', None)
+        self.analytics_port = kwargs.get('analytics_port', None)
+        self.control_port = kwargs.get('control_port', None)
+        self.agent_port = kwargs.get('agent_port', None)
+        self.schema_transformer_port = kwargs.get('schema_transformer_port', None)
         self.depth = kwargs.get('depth', -1)
         self._token = kwargs.get('token', None)
         self.config_api = None
@@ -54,28 +60,37 @@ class Context(object):
     @property
     def control(self):
         if not getattr(self, '_control', None):
-            self._control = ControlNode(self.connections['control_nodes'])
+            self._control = ControlNode(self.connections['control_nodes'], port=self.control_port)
         return self._control
 
     @property
     def analytics(self):
         if not getattr(self, '_analytics', None):
-            self._analytics = AnalyticsNode(self.connections['analytics_nodes'],
+            if self.analytics_ip:
+                analytics_nodes = [{'ip_address': self.analytics_ip,
+                                   'host_name': '',
+                                   'port': self.analytics_port}]
+            else:
+                analytics_nodes = self.connections['analytics_nodes']
+            self._analytics = AnalyticsNode(analytics_nodes,
+                                            port=self.analytics_port,
                                             token=self.token)
         return self._analytics
 
     @property
     def schema(self):
         if not getattr(self, '_schema', None):
-            self._schema = SchemaNode(self.connections['config_nodes'])
+            self._schema = SchemaNode(self.connections['config_nodes'], port=self.schema_transformer_port)
         return self._schema
 
     @property
     def status(self):
         if not getattr(self, '_status', None):
             (c_status, h_status, a_status) = ClusterStatus(token=self.token,
-                                             config_ip=self.config_ip,
-                                             config_port=self.config_port).get()
+                                                           config_ip=self.config_ip,
+                                                           config_port=self.config_port,
+                                                           analytics_ip=self.analytics_ip,
+                                                           analytics_port=self.analytics_port).get(vrouters=self.vrouters)
             status = dict()
             status['cluster_status'] = c_status
             status['host_status'] = h_status
@@ -84,13 +99,13 @@ class Context(object):
         return self._status
 
     def get_cluster_status(self):
-        return self.status['cluster_status']
+        return self.status.get('cluster_status', None)
 
     def get_cluster_alarm_status(self):
-        return self.status['alarm_status']
+        return self.status.get('alarm_status', None)
 
     def get_cluster_host_status(self):
-        return self.status['host_status']
+        return self.status.get('host_status', None)
 
     def get_debugged_vertex(self):
         return self.debugged_vertex
@@ -123,6 +138,15 @@ class Context(object):
                           }
         self.visited_vertexes_inorder.append(vertex_summary)
         self._map_uuid_to_vertex(vertex)
+
+    def add_vrouter(self, nodes, vertex_type, uuid, fq_name):
+        for node in nodes or []:
+            hostname = node.get('hostname', None)
+            if hostname:
+                self.vrouters.add(hostname)
+
+    def get_vrouters(self):
+        return self.vrouters
 
     def get_vertex_of_uuid(self, uuid):
         return self.uuid_to_vertex[uuid]

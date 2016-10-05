@@ -41,9 +41,9 @@ class ContrailUVE:
                     not_found = True
                     break;
             if not_found == False:
-                ret_dict[element] = tmp_obj                    
-
-        ret_dict['ref'] = obj['ref']
+                ret_dict[element] = tmp_obj
+        if obj.get('ref', None):
+            ret_dict['ref'] = obj['ref']
         return ret_dict
 
 

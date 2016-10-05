@@ -125,7 +125,7 @@ class Introspect(object):
     def _mk_url_str(self, path):
         if path.startswith('http:'):
             return path
-        return "http://%s:%d/%s" % (self._ip, self._port, path)
+        return "http://%s:%s/%s" % (self._ip, self._port, path)
 
     def _load(self, url):
         try:

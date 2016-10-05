@@ -25,21 +25,22 @@ class ContrailUtils(object):
         if not found_obj:
             object_list.append(obj)
 
-    def check_for_vm_vmi_in_context(self, contrail_info, context_path, config_ip, config_port, analytics_ip, uve_obj, config_api):
+    def check_for_vm_vmi_in_context(self, contrail_info, context_path, config_ip, config_port, 
+                                    analytics_ip, analytics_port, uve_obj, config_api):
         #Check if there is VM/VMI in the context Path
         for element in context_path:
             if element['type'] == 'virtual-machine':
                 #vm_uuid = element['uuid']
                 fq_name = element['fq_name']
                 contrail_info.update(self.get_contrail_vm_info(fq_name, config_ip=config_ip, config_port=config_port,
-                                                                        analytics_ip=analytics_ip))
+                                                               analytics_ip=analytics_ip, analytics_port=analytics_port))
                 return True 
             elif  element['type'] == 'virtual-machine-interface':
                 vmi_obj = uve_obj.get_object(element['fq_name'], "virtual-machine-interface", select_fields = ['UveVMInterfaceAgent.vm_uuid'])
                 vm_uuid = vmi_obj['UveVMInterfaceAgent.vm_uuid']
                 fq_name = ':'.join(config_api.post("id-to-fqname", {"uuid": vm_uuid})['fq_name'])
                 contrail_info.update(self.get_contrail_vm_info(fq_name, config_ip=config_ip, config_port=config_port,
-                                                                        analytics_ip=analytics_ip))
+                                                               analytics_ip=analytics_ip, analytics_port=analytics_port))
                 return True
         return False 
 
@@ -52,7 +53,7 @@ class ContrailUtils(object):
         context_path = kwargs.get('context_path', [])
  
         if not analytics_ip:
-            contrail_control_nodes = self.get_contrail_nodes(config_ip=config_ip, config_port=config_port)
+            contrail_control_nodes = self.get_control_nodes(config_ip=config_ip, config_port=config_port)
             analytics_ip = contrail_control_nodes['analytics_nodes'][0]['ip_address']
         uve_obj = ContrailUVE(ip=analytics_ip, port=analytics_port, token=self.token)
         if uuid_type == "virtual-machine":
@@ -61,7 +62,8 @@ class ContrailUtils(object):
             #generic code to get associated Vrouter and control objects.
             where = 'uuid=%s' %(uuid)
             config_api = ContrailApi(ip=config_ip, port=config_port, token=self.token)
-            if self.check_for_vm_vmi_in_context(contrail_info, context_path, config_ip, config_port, analytics_ip, uve_obj, config_api):
+            if self.check_for_vm_vmi_in_context(contrail_info, context_path, config_ip, config_port, 
+                                                analytics_ip, analytics_port, uve_obj, config_api):
                 return contrail_info
             #there was no VM/VMI object in the context path
             #so return info for all the VM's.
@@ -73,7 +75,7 @@ class ContrailUtils(object):
                     continue
                 fq_name = ':'.join(vm['virtual-machine']['fq_name'])
                 tmp_contrail_info = self.get_contrail_vm_info(fq_name, config_ip=config_ip, config_port=config_port,
-                                                                       analytics_ip=analytics_ip, config_api=config_api)
+                                                              analytics_ip=analytics_ip, analytics_port=analytics_port, config_api=config_api)
                 vrouter_objs = tmp_contrail_info['vrouter']
                 control_objs = tmp_contrail_info['control']
                 for vrouter_obj in vrouter_objs:
@@ -84,8 +86,8 @@ class ContrailUtils(object):
 	#Should we move this to each of the cases.
         if not fq_name:
             fq_name = vm_uuid
-        contrail_info = self.get_contrail_vm_info(fq_name, config_ip=config_ip, config_port=config_port,
-                                                           analytics_ip=analytics_ip)
+        contrail_info = self.get_contrail_vm_info(fq_name, config_ip=config_ip, config_port=config_port, 
+                                                  analytics_ip=analytics_ip, analytics_port=analytics_port)
         return contrail_info
 
 
@@ -96,13 +98,13 @@ class ContrailUtils(object):
         config_api = kwargs.get('config_api', None)
         try:
             if not analytics_ip:
-                contrail_nodes = self.get_contrail_nodes(config_ip=config_ip, config_port=config_port, config_api=config_api)
-                analytics_ip = contrail_nodes['analytics_nodes'][0]['ip_address']
+                control_nodes = self.get_control_nodes(config_ip=config_ip, config_port=config_port, config_api=config_api)
+                analytics_ip = control_nodes['analytics_nodes'][0]['ip_address']
             uve_obj = ContrailUVE(ip=analytics_ip, port=analytics_port, token=self.token)
             vmi_obj = uve_obj.get_object(fq_name, "virtual-machine-interface", select_fields = ['UveVMInterfaceAgent.vm_uuid'])
             vm_uuid = vmi_obj['UveVMInterfaceAgent.vm_uuid']
             contrail_info = self.get_contrail_vm_info(vm_uuid, config_ip=config_ip, config_port=config_port,
-                                                               analytics_ip=analytics_ip, config_api=config_api)
+                                                      analytics_ip=analytics_ip, analytics_port=analytics_port, config_api=config_api)
             return contrail_info
         except:
             return contrail_info
@@ -116,9 +118,9 @@ class ContrailUtils(object):
         config_api = kwargs.get('config_api', None)
         try:
             if not analytics_ip:
-                contrail_nodes = self.get_contrail_nodes(config_ip=config_ip, config_port=config_port, 
+                control_nodes = self.get_control_nodes(config_ip=config_ip, config_port=config_port, 
                                                                   config_api=config_api)
-                analytics_ip = contrail_nodes['analytics_nodes'][0]['ip_address']
+                analytics_ip = control_nodes['analytics_nodes'][0]['ip_address']
             uve_obj = ContrailUVE(ip=analytics_ip, port=analytics_port, token=self.token)
             vrouter_obj = uve_obj.get_object(fq_name, "virtual-machine", select_fields = ['UveVirtualMachineAgent.vrouter'])
             vrouter = {}
