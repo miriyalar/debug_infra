@@ -40,7 +40,7 @@ class EtreeToDict(object):
 
         child = xp.getchildren()
         if not child:
-            if (xp.tag == 'next_batch' or xp.tag == 'next_page') \
+            if (xp.tag == 'next_batch' or xp.tag == 'next_page' or xp.tag == 'flow_key') \
                 and xp.get('link') and xp.text:
                 text = 'Snh_%s?x=%s'%(xp.get('link'), xp.text)
             else:
@@ -250,13 +250,21 @@ class ControllerIntrospect(Introspect):
 class AgentIntrospect(Introspect):
     def get(self, path=None, ref=None):
         response = super(AgentIntrospect, self).get(path)
+        # Handle Pagination
         try:
-          if response and response.get('Pagination'):
-            next_page = response['Pagination']['req']['PageReqData']['next_page']
-            if next_page:
-                Utils.merge_dict(response, self.get(next_page))
+            # Format 1 - Check for Pagination section
+            if response and response.get('req') and \
+               response['req'].get('PageReqData'):
+                next_page = response['req']['PageReqData']['next_page']
+                if next_page:
+                    Utils.merge_dict(response, self.get(next_page))
+            # Format 2 - Check for multiple flow pages
+            elif response and response.get('flow_key'):
+                next_page = response['flow_key']
+                if next_page and '0.0.0.0-0.0.0.0' not in next_page:
+                    Utils.merge_dict(response, self.get(next_page))
         except:
-          pass
+            pass
         return response
 
     def get_intf_details(self, vmi_id=None):
@@ -315,11 +323,18 @@ class AgentIntrospect(Introspect):
         return self.get(path=url_path)
 
     def get_knh(self, nh_index=None):
+        nh_list = list()
         url_path = 'Snh_KNHReq?nh_id=%s'%(nh_index or '')
         response = self.get(path=url_path)
         if not response or not response.get('nh_list'):
             return []
-        return response['nh_list']
+        nh_list.extend(response['nh_list'])
+        if nh_index:
+            for nh in response['nh_list']:
+                if nh['type'].upper() == 'COMPOSITE':
+                    for index in nh['component_nh']:
+                        nh_list.extend(self.get_knh(index['nh_id']))
+        return nh_list
 
     def get_vrf_fqname(self, vrf_index):
         url_path = 'Snh_Inet4UcRouteReq?vrf_index=%s'%vrf_index
