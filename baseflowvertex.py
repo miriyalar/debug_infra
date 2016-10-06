@@ -102,19 +102,25 @@ class baseFlowVertex(baseVertex):
     def check_kflowtable(self, introspect, vertex, flow_ids):
         self.src_vrf_id = introspect.get_vrf_id(self.source_vrf)
         self.dest_vrf_id = introspect.get_vrf_id(self.dest_vrf)
-        flow = introspect.get_matching_kflows(self.source_ip, self.dest_ip,
+        flows = introspect.get_matching_kflows(self.source_ip, self.dest_ip,
                                              self.protocol, self.source_port,
                                              self.dest_port, self.source_nip,
                                              self.dest_nip, self.src_vrf_id,
                                              self.dest_vrf_id, flow_ids=flow_ids)
-        if flow:
-            print 'Found matching %s kernel flow on agent %s, sip %s and dip %s ' % (len(flow), introspect._ip, 
-                                                                              self.source_ip, self.dest_ip)
+        if flows:
+            self.logger.info('Kernel(%s): Found matching %s flow, sip %s and dip %s ' % (introspect._ip, len(flows), 
+                                                                                         self.source_ip, self.dest_ip))
+            for flow in flows:
+                self.logger.info('5 tuple %s:%s %s:%s %s, Action: %s, Flags: %s' % \
+                                 (flow.get('sip'), flow.get('sport'), flow.get('dip'),
+                                  flow.get('dport'), flow.get('proto'), 
+                                  flow.get('action'), flow.get('flags')))
+                
         else:
-            print 'Unable to find matching kernel flow on agent %s for sip %s, dip %s, snip %s, dnip %s, svn %s, dvn %s' % \
-                (introspect._ip, self.source_ip, self.dest_ip, self.source_nip, self.dest_nip, \
-                 self.src_vn_fqname, self.dest_vn_fqname)
-        return flow
+            self.logger.info('Kernel(%s): Unable to find matching flow for sip %s, dip %s, snip %s, dnip %s, svn %s, dvn %s' % \
+                             (introspect._ip, self.source_ip, self.dest_ip, self.source_nip, self.dest_nip,
+                              self.src_vn_fqname, self.dest_vn_fqname))
+        return flows
 
     def check_flowtable(self, introspect, vertex):
         flows = list()
@@ -127,18 +133,23 @@ class baseFlowVertex(baseVertex):
                                              self.dest_nip, self.src_nvn_fqname, self.dest_nvn_fqname,
                                              self.src_vrf_id, self.dest_vrf_id)
         if flow:
-            print 'Found matching %s flow on agent %s, sip %s and dip %s ' % (len(flow), introspect._ip, 
-                                                                              self.source_ip, self.dest_ip)
+            self.logger.info('Agent(%s): Found matching %s flow, sip %s and dip %s ' % \
+                             (introspect._ip, len(flow), 
+                              self.source_ip, self.dest_ip))
             flows.extend(flow)
         else:
-            print 'Unable to find matching flow on agent %s for sip %s, dip %s, snip %s, dnip %s, svn %s, dvn %s' % \
-                (introspect._ip, self.source_ip, self.dest_ip, self.source_nip, self.dest_nip, \
-                 self.src_vn_fqname, self.dest_vn_fqname)
+            self.logger.info('Agent(%s): Unable to find matching flow for sip %s, dip %s, snip %s, dnip %s, svn %s, dvn %s' % \
+                             (introspect._ip, self.source_ip, self.dest_ip, self.source_nip, self.dest_nip, \
+                             self.src_vn_fqname, self.dest_vn_fqname))
         for flow in flows:
+            self.logger.info('5 tuple %s:%s %s:%s %s, Action: %s' % \
+                             (flow.get('sip'), flow.get('src_port'), 
+                              flow.get('dip'), flow.get('dst_port'), 
+                              flow.get('protocol'), flow.get('action_str')))
             if flow['sg_action_summary'][0]['action'] != 'pass':
-                print 'SG drop'
+                self.logger.warning('SG drop')
             if flow['action_str'][0]['action'] != 'pass':
-                print 'Flow action Drop'
+                self.logger.warning('Flow action Drop')
         fwdflow = [flow for flow in flows if flow['reverse_flow'] == 'no']
         revflow = [flow for flow in flows if flow['reverse_flow'] == 'yes']
         return {'fwdflow': fwdflow, 'revflow': revflow}

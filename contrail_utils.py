@@ -37,6 +37,9 @@ class ContrailUtils(object):
                 return True 
             elif  element['type'] == 'virtual-machine-interface':
                 vmi_obj = uve_obj.get_object(element['fq_name'], "virtual-machine-interface", select_fields = ['UveVMInterfaceAgent.vm_uuid'])
+                if not vmi_obj or not vmi_obj.get('UveVMInterfaceAgent.vm_uuid'):
+                    print 'Error: VMI obj is not found in Analytics UVE'
+                    return False                    
                 vm_uuid = vmi_obj['UveVMInterfaceAgent.vm_uuid']
                 fq_name = ':'.join(config_api.post("id-to-fqname", {"uuid": vm_uuid})['fq_name'])
                 contrail_info.update(self.get_contrail_vm_info(fq_name, config_ip=config_ip, config_port=config_port,
