@@ -1,5 +1,9 @@
-#!/usr/bin/env python
-"""Retrieve or Query an object from introspects"""
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+Retrieve or Query an object from introspects
+"""
 
 import requests
 import logger

@@ -1,3 +1,10 @@
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+Logger for debug vertexes
+"""
+
 import logging
 from logging.handlers import RotatingFileHandler
 c_level = logging.ERROR

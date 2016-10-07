@@ -1,3 +1,10 @@
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+ Default options for any debug vertex
+"""
+
 import argparse
 import ConfigParser
 import os

@@ -1,3 +1,10 @@
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+Utilities to fetch cluster details including relevant compute nodes based on the given uuid
+"""
+
 import pdb
 import json
 from contrail_uve import ContrailUVE

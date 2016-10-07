@@ -1,3 +1,15 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+This is RI vertex to get RI information from config, control and relevant compute nodes
+Input: 
+   Mandatory: uuid | fq_name
+Dependant vertexes:
+   VN
+"""
+
 import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex

@@ -1,3 +1,12 @@
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+A context is maintained for debugging session via debug vertex
+Context maintains visisted vertexes and their objects
+Context code also authenticates with keystone to access config/analytics nodes
+Cluster status also maintained at the context.
+"""
 from keystone_auth import ContrailKeystoneAuth
 from contrailnode_api import ControlNode, ConfigNode, Vrouter, AnalyticsNode, SchemaNode
 from contrail_utils import ContrailUtils

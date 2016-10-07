@@ -1,5 +1,9 @@
-#!/usr/bin/env python
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+Contrail cluster status, also takes uuid of an object and gets the status of relevant compute nodes
+"""
 
 from contrail_utils import ContrailUtils
 from contrail_uve import ContrailUVE

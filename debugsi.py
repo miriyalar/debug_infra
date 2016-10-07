@@ -1,3 +1,15 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+This is service instance vertex to get information from control, config, schema, analytics 
+and relevant compute nodes.
+Input: 
+   Mandatory: uuid | fqname | service chain fq name
+Dependant vertexes:
+"""
+
 import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
@@ -11,6 +23,29 @@ class debugVertexSI(baseVertex):
         self.sc_name = None
         self.dependant_vertexes = [debugvm.debugVertexVM, debugvmi.debugVertexVMI]
         super(debugVertexSI, self).__init__(**kwargs)
+
+    def get_schema(self):
+        schema_dict = {
+                "service-chain": {
+                        "sc_name": self.get_si_from_sc,
+                },
+        }
+        return schema_dict
+
+    def get_si_from_sc(self, sc_name):
+        objs = list()
+        self.sc_name = sc_name
+        node = self.schema.get_nodes()[0]
+        introspect = self.schema.get_inspect_h(node['ip_address'])
+        service_chains = introspect.get_service_chains(sc_name)
+        if not service_chains:
+            raise Exception('Service chain not found')
+        self.service_chain = service_chains[0]
+        refs = {p['object_type']:p['object_fq_name']
+                for p in self.service_chain['obj_refs']}
+        for service_instance in refs['service_instance']:
+             objs.append({'fq_name': service_instance})
+        return objs
 
     def get_config_schema(self, vertex, schema_inspect_h):
         si = schema_inspect_h.get_service_instances(vertex['uuid'])[0]
@@ -54,29 +89,6 @@ class debugVertexSI(baseVertex):
             vertex['left_vrf'] = schema.get_vrfs_of_vn(left_vn, sc_uuid=self.sc_name,
                                                        si_name=vertex['fq_name'])[0]
         vertex['vrouters'] = self.get_vrouters(vertex)
-
-    def get_schema(self):
-        schema_dict = {
-                "service-chain": {
-                        "sc_name": self.get_si_from_sc,
-                },
-        }
-        return schema_dict
-
-    def get_si_from_sc(self, sc_name):
-        objs = list()
-        self.sc_name = sc_name
-        node = self.schema.get_nodes()[0]
-        introspect = self.schema.get_inspect_h(node['ip_address'])
-        service_chains = introspect.get_service_chains(sc_name)
-        if not service_chains:
-            raise Exception('Service chain not found')
-        self.service_chain = service_chains[0]
-        refs = {p['object_type']:p['object_fq_name']
-                for p in self.service_chain['obj_refs']}
-        for service_instance in refs['service_instance']:
-             objs.append({'fq_name': service_instance})
-        return objs
 
 def parse_args(args):
     parser = ArgumentParser(description='Debug utility for SI', add_help=True)

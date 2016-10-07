@@ -1,3 +1,16 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+This is floating ip vertex to debug floating ip in the contrail.
+Gets information from config, control, analytics and relevant compute nodes.
+Input: 
+   Mandatory: uuid | floating_ip_address | (object_type, uuid) [object_type and uuid has to be there in the schema_dict]
+Dependant vertexes:
+   VMI
+"""
+
 import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex

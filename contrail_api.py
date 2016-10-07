@@ -1,4 +1,12 @@
-#!/bin/python
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+contrail objects via REST API interface.
+It gets objects from API server with specified match condition and fields.
+This class implements deep traversal to fetch fields or match condition
+"""
+
 import pdb
 import pprint
 import json

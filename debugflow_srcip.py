@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+"""
+
 import sys
 from vertex_print import vertexPrint
 from debugflow import debugVertexFlow

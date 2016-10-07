@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+"""
+
 class ContrailConError(object):
     #Declare http error codes
     AUTH_FAILURE = 401

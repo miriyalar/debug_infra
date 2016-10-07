@@ -1,3 +1,16 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+This is VMI debug vertex to debug VMI in the contrail.
+Gets information from config, control, analytics and relevant compute nodes
+Input: 
+   Mandatory: uuid | (object-type, uuid) [object_type and uuid has to be there in the schema_dict]
+Dependant vertexes:
+   VM, VN, SG, IP
+"""
+
 import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
@@ -13,14 +26,6 @@ class debugVertexVMI(baseVertex):
     def __init__(self, **kwargs):
         self.dependant_vertexes = [debugvm.debugVertexVM, debugvn.debugVertexVN, debugsg.debugVertexSG, debugip.debugVertexIP]
         super(debugVertexVMI, self).__init__(**kwargs)
-
-    def process_self(self, vertex):
-        agent = {}
-        agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex)
-        self._add_agent_to_context(vertex, agent)
-        control = {}
-        control['oper'] = {}
-        self._add_control_to_context(vertex, control)
 
     def get_schema(self):
         #VM UUID, VMI UUID, VMI Name, VN UUID
@@ -46,6 +51,14 @@ class debugVertexVMI(baseVertex):
                 },
         }
         return schema_dict
+
+    def process_self(self, vertex):
+        agent = {}
+        agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex)
+        self._add_agent_to_context(vertex, agent)
+        control = {}
+        control['oper'] = {}
+        self._add_control_to_context(vertex, control)
 
     def _get_agent_oper_db(self, introspect, vertex):
         error = False

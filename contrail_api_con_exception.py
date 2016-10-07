@@ -1,3 +1,8 @@
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+"""
 class ContrailApiConnectionException(Exception):
 
     def __init__(self, msg, ret_code = 0):

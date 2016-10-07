@@ -1,3 +1,15 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+This is security group vertex and gets SG information from config, control and relevant compute nodes.
+Input:
+   Mandatory: uuid | (object_type, uuid) [object_type and uuid has to be there in the schema_dict]
+Dependant vertexes:
+   VMI
+"""
+
 import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
@@ -9,6 +21,17 @@ class debugVertexSG(baseVertex):
     def __init__(self, **kwargs):
         self.dependant_vertexes = [debugvmi.debugVertexVMI]
         super(debugVertexSG, self).__init__(**kwargs)
+
+    def get_schema(self):
+        schema_dict = {
+                "virtual-machine": {
+                        "uuid": 'virtual_machine_interface_back_refs.security_group_refs'
+                },
+                "virtual-machine-interface": {
+                        "uuid": 'security_group_refs'
+                }
+        }
+        return schema_dict
 
     def process_self(self, vertex):
         agent = {}
@@ -49,16 +72,6 @@ class debugVertexSG(baseVertex):
         print pstr
         return oper
 
-    def get_schema(self):
-        schema_dict = {
-                "virtual-machine": {
-                        "uuid": 'virtual_machine_interface_back_refs.security_group_refs'
-                },
-                "virtual-machine-interface": {
-                        "uuid": 'security_group_refs'
-                }
-        }
-        return schema_dict
 
 def parse_args(args):
     parser = ArgumentParser(description='Debug utility for SG', add_help=True)

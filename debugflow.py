@@ -1,3 +1,18 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+This is non config debugflow vertex to debug a given flow with 2 tuple to 7 tuple
+If the flow has service chain attached, it is required to give left and right VN of the flow.
+Input:
+   Mandatory: 3 tuple (source VN, source IP, dest IP)
+   Optional: Rest of 7 tuples (dest VN, source port, dest port, protocol)
+             ip_type is optional, takes 'instance-ip' or 'floating-ip',
+             default is 'instance-ip'
+Dependant vertexes:
+"""
+
 import sys
 from vertex_print import vertexPrint
 from baseflowvertex import baseFlowVertex

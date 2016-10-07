@@ -1,3 +1,15 @@
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+This is non config vertex for base flow or session. Checkes the flow from the given vrouters
+Agent/Kernel flow info will be collected
+Input:
+   Mandatory: 3 tuple, vrouters
+   Optional: Rest of the 7 tuple
+Dependant vertexes:
+   Route
+"""
 import sys
 import argparse
 from collections import defaultdict

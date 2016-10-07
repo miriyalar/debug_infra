@@ -1,4 +1,10 @@
-#!/bin/python
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+Keystone authentication class
+"""
+
 import pdb
 import json
 import re

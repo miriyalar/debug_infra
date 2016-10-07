@@ -1,3 +1,10 @@
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+Output options to dump context information.
+json format, filesystem dump of context are supported
+"""
 from pprint import pprint
 import json
 from utils import Utils
