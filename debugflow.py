@@ -178,6 +178,9 @@ class debugVertexFlow(baseVertex):
                            dest_nip=path.get('dnip'),
                            source_vn=self.source_vn,
                            dest_vn=self.dest_vn,
+                           source_port=self.source_port,
+                           dest_port=self.dest_port,
+                           protocol=self.protocol
                            )
 
 def parse_args(args):
