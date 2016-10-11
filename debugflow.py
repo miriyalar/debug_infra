@@ -10,7 +10,7 @@ import debugsc
 class debugVertexFlow(baseVertex):
     vertex_type = 'flow'
     non_config_obj = True
-    ip_type = ['instance-ip', 'floating-ip']
+    ip_type = ['instance-ip', 'floating-ip', 'external']
     def __init__(self, context=None, source_ip='', dest_ip='',
                  source_vn='', dest_vn='', protocol='',
                  source_port='', dest_port='', **kwargs):
@@ -24,17 +24,21 @@ class debugVertexFlow(baseVertex):
         self.dest_port = dest_port
         self.source_nip = kwargs.get('source_nip', '')
         self.dest_nip = kwargs.get('dest_nip', '')
-        self.source_vrf = kwargs.get('source_vrf', '')
-        self.dest_vrf = kwargs.get('dest_vrf', '')
-        self.source_nvrf = kwargs.get('source_nvrf', '')
-        self.dest_nvrf = kwargs.get('dest_nvrf', '')
+#        self.source_vrf = kwargs.get('source_vrf', '')
+#        self.dest_vrf = kwargs.get('dest_vrf', '')
+#        self.source_nvrf = kwargs.get('source_nvrf', '')
+#        self.dest_nvrf = kwargs.get('dest_nvrf', '')
         self.source_ip_type = kwargs.get('source_ip_type', '')
         self.dest_ip_type = kwargs.get('dest_ip_type', '')
         self.match_kv = {'source_ip': source_ip, 'dest_ip': dest_ip}
-        if not self.source_vrf:
-            self.source_vrf = source_vn + ':' + source_vn.split(':')[-1]
-        if not self.dest_vrf:
-            self.dest_vrf = dest_vn + ':' + dest_vn.split(':')[-1]
+        if not self.source_vn and not self.dest_vn:
+            raise Exception('Please specify VN FQNames')
+        if not self.source_vn:
+            self.source_vn = self.dest_vn
+        if not self.dest_vn:
+            self.dest_vn = self.source_vn
+        self.source_vrf = self.source_vn + ':' + self.source_vn.split(':')[-1]
+        self.dest_vrf = self.dest_vn + ':' + self.dest_vn.split(':')[-1]
         super(debugVertexFlow, self).__init__(context=context, **kwargs)
 
     def get_schema(self):
@@ -43,47 +47,57 @@ class debugVertexFlow(baseVertex):
     def get_uuid(self):
         return ':'.join(['flow', self.source_ip, self.source_nip,
                          self.dest_ip, self.dest_nip,
-                         self.source_vrf, self.source_nvrf,
-                         self.dest_vrf, self.dest_nvrf,
+                         self.source_vrf, self.dest_vrf,
                          self.source_port, self.dest_port,
                          self.protocol])
+# self.source_nvrf, self.dest_nvrf,
+
+    def _get_vertex(self, address, ip_type=None, vn_fqname=None):
+        vertex = None
+        if not vn_fqname:
+            return None
+        if ip_type not in self.ip_type:
+            ip_type = self.config.get_ip_type(address, vn_fqname)
+
+        if ip_type == 'instance-ip':
+            vertex = debugVertexIP(instance_ip_address=address,
+                                   virtual_network=vn_fqname,
+                                   context=self.context)
+        elif ip_type == 'floating-ip':
+            vertex = debugVertexFIP(floating_ip_address=address,
+                                    virtual_network=vn_fqname,
+                                    context=self.context)
+        elif ip_type == 'external':
+            pass
+        else:
+            self.logger.error('ip type %s is not expected, ip = %s, vn = %s' % (
+                              ip_type, address, vn_fqname))
+        return vertex
 
     def locate_obj(self):
-        if self.source_ip_type not in self.ip_type:
-            self.source_ip_type = self.config.get_ip_type(self.source_ip, self.source_vn)
-        if self.source_ip_type == 'instance-ip':
-            self.srcip_vertex = debugVertexIP(instance_ip_address=self.source_ip,
-                                              virtual_network=self.source_vn,
-                                              context=self.context)
-        elif self.source_ip_type == 'floating-ip':
-            self.srcip_vertex = debugVertexFIP(floating_ip_address=self.source_ip,
-                                               virtual_network=self.self.source_vn,
-                                               context=self.context)
+        srcip_vertex = self._get_vertex(self.source_ip,
+                                        self.source_ip_type,
+                                        self.source_vn)
+        destip_vertex = self._get_vertex(self.dest_ip,
+                                         self.dest_ip_type,
+                                         self.dest_vn)
+        # Get vRouter info from the vertex
+        if srcip_vertex:
+            vertex = srcip_vertex.vertexes[0]
+            left_vn = ':'.join(self.get_attr('virtual_network_refs.0.to', vertex)[0])
+            self.srcip_vrouters = srcip_vertex.get_vrouters(vertex)
         else:
-            self.logger.error('source ip type is not defined, ip = %s, vn = %s' % (self.source_ip,
-                                                                                   self.source_vn))
-            return
-        vertex = self.srcip_vertex.vertexes[0]
-        left_vn = ':'.join(self.get_attr('virtual_network_refs.0.to', vertex)[0])
-        self.srcip_vrouters = self.srcip_vertex.get_vrouters(vertex)
+            self.srcip_vrouters = None
+            left_vn = self.source_vn
 
-        if self.dest_ip_type not in self.ip_type:
-            self.dest_ip_type = self.config.get_ip_type(self.dest_ip, self.dest_vn)
-        if self.dest_ip_type == 'instance-ip':
-            self.destip_vertex = debugVertexIP(instance_ip_address=self.dest_ip,
-                                               virtual_network=self.dest_vn,
-                                               context=self.context)
-        elif self.dest_ip_type == 'floating-ip':
-            self.destip_vertex = debugVertexFIP(floating_ip_address=self.dest_ip,
-                                                virtual_network=self.dest_vn,
-                                                context=self.context)
+        if destip_vertex:
+            vertex = destip_vertex.vertexes[0]
+            right_vn = ':'.join(self.get_attr('virtual_network_refs.0.to', vertex)[0])
+            self.destip_vrouters = destip_vertex.get_vrouters(vertex)
         else:
-            self.logger.error('dest ip type is not defined, ip = %s, vn = %s' % (self.dest_ip,
-                                                                                 self.dest_vn))
-            return
-        vertex = self.destip_vertex.vertexes[0]
-        right_vn = ':'.join(self.get_attr('virtual_network_refs.0.to', vertex)[0])
-        self.destip_vrouters = self.destip_vertex.get_vrouters(vertex)
+            self.destip_vrouters = None
+            right_vn = self.dest_vn
+
         objs = list()
         objs.append({self.vertex_type: {'uuid': self.get_uuid(),
                                         'left_vn': left_vn,
@@ -105,21 +119,23 @@ class debugVertexFlow(baseVertex):
         for dep_vertex_objs in self.get_dependent_vertices():
              if dep_vertex_objs.vertexes:
                  sc_vertexes.extend(dep_vertex_objs.vertexes)
-        source = {'sip': self.source_ip,
-                  'dip': self.dest_ip,
-                  'source_vrf': self.source_vrf,
-                  'vrouters': self.srcip_vrouters,
-                  'dest_vrf': self.dest_vrf
-                 }
-        initial = True
-        path.append(source)
+        if self.srcip_vrouters:
+            source = {'sip': self.source_ip,
+                      'dip': self.dest_ip,
+                      'source_vrf': self.source_vrf,
+                      'vrouters': self.srcip_vrouters,
+                      'dest_vrf': self.dest_vrf
+                     }
+            path.append(source)
         natted_ips = None
         if sc_vertexes:
+            initial = True
             # Do the service chain path
             for sc_vertex in sc_vertexes:
                 for si_path in sc_vertex['path']:
                     if initial:
-                        path[-1]['dest_vrf'] = si_path['left_vrf']
+                        if path:
+                            path[-1]['dest_vrf'] = si_path['left_vrf']
                         initial = False
                     pleft = {'vrouters': si_path['vrouters'],
                              'source_vrf': pleft_vrf,
@@ -140,18 +156,20 @@ class debugVertexFlow(baseVertex):
                              }
                     path.append(pleft)
                     path.append(pright) 
-        dest = {'sip': self.source_ip,
-                'dip': self.dest_ip,
-                'source_vrf': self.dest_vrf,
-                'dest_vrf': path[-1]['dest_vrf'],
-                'snip': natted_ips,
-                'vrouters': self.destip_vrouters
-               }
-        path.append(dest)
+        if self.destip_vrouters:
+            dest = {'sip': self.source_ip,
+                    'dip': self.dest_ip,
+                    'source_vrf': self.dest_vrf,
+                    'dest_vrf': path[-1]['dest_vrf'] if path else self.dest_vrf,
+                    'snip': natted_ips,
+                    'vrouters': self.destip_vrouters
+                   }
+            path.append(dest)
         return path
  
     def process_self(self, vertex):
         vertex['path'] = self.get_path()
+        # Trace the expected packet flow path
         for path in vertex['path']:
             baseFlowVertex(context=self.context,
                            vrouters=path['vrouters'],
@@ -170,9 +188,9 @@ def parse_args(args):
     parser.add_argument('--source_ip', help='Source IP of the flow', required=True)
     parser.add_argument('--dest_ip', help='Destination IP of the flow', required=True)
     parser.add_argument('--source_vn', help='VN of the source IP', default='')
-    parser.add_argument('--source_vrf', help='VRF of the source IP', default='')
+#    parser.add_argument('--source_vrf', help='VRF of the source IP', default='')
     parser.add_argument('--dest_vn', help='VN of the destination IP', default='')
-    parser.add_argument('--dest_vrf', help='VRF of the destination IP', default='')
+#    parser.add_argument('--dest_vrf', help='VRF of the destination IP', default='')
     parser.add_argument('--protocol', help='L3 Protocol of the flow', default='')
     parser.add_argument('--source_port', help='Source Port of the flow', default='')
     parser.add_argument('--dest_port', help='Destination Port of the flow', default='')
