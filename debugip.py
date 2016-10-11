@@ -1,3 +1,14 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+This is IP vertex to get IP information from config, control and relevant compute nodes
+Input: 
+   Mandatory: uuid | instance_ip_address | (object_type, uuid)
+Dependant vertexes:
+"""
+
 import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex

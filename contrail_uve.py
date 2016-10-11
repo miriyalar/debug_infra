@@ -1,4 +1,10 @@
-#!/bin/python
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+Analytics node connection to fetch UVE objects
+"""
+
 import pdb
 import logger
 import pprint

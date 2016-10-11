@@ -1,3 +1,10 @@
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+Maintain connections to config, control, analytics and vrouter nodes
+"""
+
 from introspect import ControllerIntrospect, AgentIntrospect, SchemaIntrospect
 from contrail_api import ContrailApi
 from contrail_uve import ContrailUVE

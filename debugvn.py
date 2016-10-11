@@ -1,3 +1,15 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+This is VN vertex to get VN information from config, control and relevant compute nodes
+Input: 
+   Mandatory: uuid | (object-type, uuid) [object_type and uuid has to be there in the schema_dict]
+Dependant vertexs:
+   VMI, RI
+"""
+
 import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
@@ -11,6 +23,18 @@ class debugVertexVN(baseVertex):
     def __init__(self, **kwargs):
         dependant_vertexes = [debugvmi.debugVertexVMI, debugri.debugVertexRI]
         super(debugVertexVN, self).__init__(**kwargs)
+
+    def get_schema(self, **kwargs):
+        #VN Name, VN UUID, VMI UUID
+        schema_dict = {
+                "virtual-machine": {
+                    "uuid": 'virtual_machine_interface_back_refs.virtual_network_refs'
+                },
+                "virtual-machine-interface": {
+                    "uuid": 'virtual_network_refs'
+                }
+        }
+        return schema_dict
 
     def process_self(self, vertex):
         agent = {}
@@ -37,18 +61,6 @@ class debugVertexVN(baseVertex):
         self.logger.debug(pstr)
         print pstr
         return oper
-
-    def get_schema(self, **kwargs):
-        #VN Name, VN UUID, VMI UUID
-        schema_dict = {
-                "virtual-machine": {
-                    "uuid": 'virtual_machine_interface_back_refs.virtual_network_refs'
-                },
-                "virtual-machine-interface": {
-                    "uuid": 'virtual_network_refs'
-                }
-        }
-        return schema_dict
 
 def parse_args(args):
     parser = ArgumentParser(description='Debug utility for VN', add_help=True)

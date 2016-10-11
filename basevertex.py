@@ -1,3 +1,14 @@
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+This base vertex for config/non config objects.
+Gets cluster's control, config, analytics, vrouter nodes
+Config object collection from all control, config, compute nodes.
+Keep place holders for inherited vertex to fill operational DB information.
+Invokes dependeant vertexes
+Creates context and saves information about visisted vertexes.
+"""
 import pdb
 import logger
 from introspect import Introspect

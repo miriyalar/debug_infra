@@ -1,4 +1,10 @@
-#!/bin/python
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+Config node connection with authentication
+"""
+
 import pdb
 import re
 import pprint

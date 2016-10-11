@@ -1,3 +1,16 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+This is sampple vertex 
+Input: 
+   Mandatory: uuid | fq_name
+   Optional: 
+Dependant vertexes:
+   VM, VN, SG, IP...
+"""
+
 import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex

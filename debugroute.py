@@ -1,3 +1,17 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+This is non config route vertex to debug a route in the contrail.
+Vertex checks the route in control node and vrouter nodes. 
+This vertex also gives NH info corresponding to the route.
+Input: 
+   Mandatory: prefix, vn_fqname | ri_fqname
+   Optional: vrouters
+Dependant vertexes:
+"""
+
 import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex

@@ -1,3 +1,14 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
+#
+"""
+This is non config service chain vertex to debug service chain/s.
+Input:
+   Mandatory: left_vn, right_vn
+Dependant vertexes:
+"""
+
 import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
