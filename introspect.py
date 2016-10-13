@@ -409,9 +409,7 @@ class AgentIntrospect(Introspect):
         vn_set.discard(None); vn_set.discard('')
         vrf_set.discard(None); vrf_set.discard('')
         for flow in flows['flow_list'] or []:
-            if ip_set and flow['sip'] not in ip_set:
-                continue
-            if ip_set and flow['dip'] not in ip_set:
+            if ip_set and flow['sip'] not in ip_set and flow['dip'] not in ip_set:
                 continue
             if protocol and protocol != flow['protocol']:
                 continue

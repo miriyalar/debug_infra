@@ -67,9 +67,9 @@ class debugVertexFlow(baseVertex):
                          self.protocol])
 # self.source_nvrf, self.dest_nvrf,
 
-    def _get_vertex(self, address, ip_type=None, vn_fqname=None):
+    def _get_vertex(self, address=None, ip_type=None, vn_fqname=None):
         vertex = None
-        if not vn_fqname:
+        if not vn_fqname or not address:
             return None
         if ip_type not in self.ip_type:
             ip_type = self.config.get_ip_type(address, vn_fqname)
@@ -97,7 +97,7 @@ class debugVertexFlow(baseVertex):
                                          self.dest_ip_type,
                                          self.dest_vn)
         # Get vRouter info from the vertex
-        if srcip_vertex:
+        if srcip_vertex and srcip_vertex.vertexes:
             vertex = srcip_vertex.vertexes[0]
             left_vn = ':'.join(self.get_attr('virtual_network_refs.0.to', vertex)[0])
             self.srcip_vrouters = srcip_vertex.get_vrouters(vertex)
@@ -105,7 +105,7 @@ class debugVertexFlow(baseVertex):
             self.srcip_vrouters = None
             left_vn = self.source_vn
 
-        if destip_vertex:
+        if destip_vertex and destip_vertex.vertexes:
             vertex = destip_vertex.vertexes[0]
             right_vn = ':'.join(self.get_attr('virtual_network_refs.0.to', vertex)[0])
             self.destip_vrouters = destip_vertex.get_vrouters(vertex)
@@ -204,7 +204,7 @@ class debugVertexFlow(baseVertex):
 def parse_args(args):
     parser = ArgumentParser(description='Debug utility for Flow', add_help=True)
     parser.add_argument('--source_ip', help='Source IP of the flow', required=True)
-    parser.add_argument('--dest_ip', help='Destination IP of the flow', required=True)
+    parser.add_argument('--dest_ip', help='Destination IP of the flow', default='')
     parser.add_argument('--source_vn', help='VN of the source IP', default='')
 #    parser.add_argument('--source_vrf', help='VRF of the source IP', default='')
     parser.add_argument('--dest_vn', help='VN of the destination IP', default='')

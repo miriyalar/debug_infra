@@ -85,8 +85,8 @@ class baseFlowVertex(baseVertex):
         control['oper'] = {}
         self._add_control_to_context(vertex, control)
 
-    def get_element(self, vertex, vrf_name):
-        element = self._create_element(vertex, prefix=self.dest_ip,
+    def get_element(self, vertex, vrf_name, prefix):
+        element = self._create_element(vertex, prefix=prefix,
                                        vrouters=self.get_vrouters(vertex),
                                        ri_fqname=vrf_name)
         return element
@@ -105,8 +105,8 @@ class baseFlowVertex(baseVertex):
             vrf_fqname = introspect.get_vrf_fqname(vrf_index=flow['dest_vrf'])
             debugroute.debugVertexRoute(context=self.context,
                                         element=self.get_element(vertex,
-                                                                 vrf_fqname))
-            oper['routes'].append(debugroute.get_route_uuid(prefix=self.dest_ip,
+                                                                 vrf_fqname, prefix=flow['dip']))
+            oper['routes'].append(debugroute.get_route_uuid(prefix=flow['dip'],
                                              ri_fqname=vrf_fqname,
                                              vrouters=self.get_vrouters(vertex)))
         return oper
