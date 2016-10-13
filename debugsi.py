@@ -53,7 +53,7 @@ class debugVertexSI(baseVertex):
 
     def process_self(self, vertex):
         props = self.get_attr('properties', vertex, subtype='schema')[0]
-        prop = {p['property_name']:p['property'] for p in props}
+        prop = {p['property_name']:p.get('property') for p in props}
         vertex['st_mode'] = prop['service_mode']
         vertex['auto_policy'] = prop['auto_policy']
         left_vn = prop['left_network']

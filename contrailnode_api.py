@@ -121,7 +121,7 @@ class ConfigNode:
                 return 'floating-ip'
         except Exception as e:
             print e
-        return ip_type
+        return 'external'
 
 
 class IntrospectNode(object):

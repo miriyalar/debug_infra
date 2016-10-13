@@ -43,6 +43,9 @@ class debugVertexSC(baseVertex):
         if self.element is not None:
             self.left_vn = self.element['left_vn']
             self.right_vn = self.element['right_vn']
+        if not self.left_vn or not self.right_vn or \
+           (self.left_vn == self.right_vn):
+            return []
         service_chains = inspect.get_service_chains(vn_list=[self.left_vn, self.right_vn])
         if not service_chains:
             self.logger.info('no service chains found between %s and %s' % (self.left_vn,
