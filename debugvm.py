@@ -18,21 +18,12 @@ from parser import ArgumentParser
 import debugvmi
 
 class debugVertexVM(baseVertex):
-    """
-    This is VM debug vertex to debug VM in the contrail.
-    Gets information from config, control and relevant compute nodes
-    Input: 
-    Mandatory: uuid | (object-type, uuid) [object_type and uuid has to be there in the schema_dict]
-    Dependant vertexes:
-    VMI
-    """
     vertex_type = 'virtual-machine'
     def __init__(self, **kwargs):
         self.dependant_vertexes = [debugvmi.debugVertexVMI]
         super(debugVertexVM, self).__init__(**kwargs)
 
     def get_schema(self):
-        import pdb; pdb.set_trace()
         #VMI, VM name, VM UUID
         schema_dict = {
                 "virtual-machine-interface": {
