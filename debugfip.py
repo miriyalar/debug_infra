@@ -2,22 +2,27 @@
 #
 # Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
 #
-"""
-This is floating ip vertex to debug floating ip in the contrail.
-Gets information from config, control, analytics and relevant compute nodes.
-Input: 
-   Mandatory: uuid | floating_ip_address | (object_type, uuid) [object_type and uuid has to be there in the schema_dict]
-Dependant vertexes:
-   VMI
-"""
 
 import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
+from argparse import RawTextHelpFormatter
 import debugvmi
 
 class debugVertexFIP(baseVertex):
+    """
+    Debug utility for FIP.
+    
+    This is floating ip vertex to debug floating ip in contrail.
+    Gets information from config, control, analytics and relevant compute nodes.
+    Input: 
+         Mandatory: uuid | floating_ip_address | (object_type, uuid) [object_type and uuid has to be there in schema_dict]
+    Output:
+         Console output, debug_nodes.log and contrail_debug_output.json
+    Dependant vertexes:
+         VMI
+    """
     vertex_type = 'floating-ip'
 
     def __init__(self, **kwargs):
@@ -96,20 +101,13 @@ class debugVertexFIP(baseVertex):
         return oper
 
 def parse_args(args):
-    parser = ArgumentParser(description='Debug utility for FIP', add_help=True)
+    parser = ArgumentParser(description=debugVertexFIP.__doc__, add_help=True, formatter_class=RawTextHelpFormatter)
     parser.add_argument('--floating_ip_address', help='Floating ip address to debug')
     return parser.parse_args(args)
 
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
     vFIP= debugVertexFIP(**args)
-    #context = vFIP.get_context()
-    #vertexPrint(context, detail=args.detail)
     vP = vertexPrint(vFIP)
-    #vP._visited_vertexes_brief(context)
-    #vP.print_visited_nodes(context, detail=False)
-    #vP.print_object_based_on_uuid( '9f838303-7d84-44c4-9aa3-b34a3e8e56b1',context, False)
-    #vP.print_object_catalogue(context, False)
-    #vP.print_visited_vertexes_inorder(context)
     vP.convert_json()
     vP.convert_to_file_structure()

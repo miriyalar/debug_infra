@@ -1,12 +1,6 @@
 #
 # Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
 #
-"""
-contrail objects via REST API interface.
-It gets objects from API server with specified match condition and fields.
-This class implements deep traversal to fetch fields or match condition
-"""
-
 import pdb
 import pprint
 import json
@@ -19,6 +13,12 @@ from contrail_con_enum import ContrailConError
 import datetime
 
 class ContrailApi:
+    """
+    contrail objects via REST API interface.
+    Gets objects from API server with specified match condition and fields.
+    This class implements deep traversal to fetch fields or match condition
+    """
+
     _ref_to_obj = {
         "virtual_machine_refs" : "virtual-machine",
         "virtual_machine_interface_refs": "virtual-machine-interface"

@@ -1,16 +1,15 @@
 #
 # Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
 #
-"""
-Utilities to fetch cluster details including relevant compute nodes based on the given uuid
-"""
-
 import pdb
 import json
 from contrail_uve import ContrailUVE
 from contrail_api import ContrailApi
 
 class ContrailUtils(object):
+    """
+    Utilities to fetch cluster details including relevant compute nodes based on the given uuid
+    """
     def __init__(self, token=None):
         self.token = token
         self._agent_schema_dict = {

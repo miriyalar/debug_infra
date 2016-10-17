@@ -1,10 +1,6 @@
 #
 # Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
 #
-"""
-Analytics node connection to fetch UVE objects
-"""
-
 import pdb
 import logger
 import pprint
@@ -14,6 +10,9 @@ from urlparse import urlparse
 from contrail_api_con import ContrailApiConnection
 
 class ContrailUVE:
+    """
+    Analytics node connection to fetch UVE objects
+    """
     def __init__(self, ip = "127.0.0.1", port = "8081", token=None):
         self.log = logger.getLogger(logger_name=self.__class__.__name__)
         token_header = {'X-AUTH-TOKEN': token} if token else {}

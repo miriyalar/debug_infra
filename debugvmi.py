@@ -2,25 +2,30 @@
 #
 # Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
 #
-"""
-This is VMI debug vertex to debug VMI in the contrail.
-Gets information from config, control, analytics and relevant compute nodes
-Input: 
-   Mandatory: uuid | (object-type, uuid) [object_type and uuid has to be there in the schema_dict]
-Dependant vertexes:
-   VM, VN, SG, IP
-"""
-
 import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
+from argparse import RawTextHelpFormatter
 import debugvm
 import debugvn
 import debugsg
 import debugip
 
 class debugVertexVMI(baseVertex):
+    """
+    Debug utility for VMI.
+
+    This is VMI debug vertex to debug VMI in contrail.
+    Gets information from config, control, analytics and relevant compute nodes
+    Input: 
+         Mandatory: uuid | (object-type, uuid) [object_type and uuid has to be there in the schema_dict]
+    Output:
+         Console output and contrail_debug_output.json, logs are at debug_nodes.log
+    Dependant vertexes:
+         VM, VN, SG, IP
+    """
+
     vertex_type = 'virtual-machine-interface'
 
     def __init__(self, **kwargs):
@@ -73,7 +78,6 @@ class debugVertexVMI(baseVertex):
             pstr = "Agent Error interface uuid %s, doesn't exist" % (vmi_uuid)
             error = True
             self.logger.error(pstr)
-            print pstr
             return oper
 
         # Is interface active
@@ -81,11 +85,9 @@ class debugVertexVMI(baseVertex):
             pstr = "Agent Error %s, %s is not Active" % (intf_rec['uuid'], intf_rec['name'])
             error = True
             self.logger.error(pstr)
-            print pstr
         else:
             pstr = "Agent: Interface %s is active" % (intf_rec['name'])
-            self.logger.debug(pstr)
-            print pstr
+            self.logger.info(pstr)
 
         # Is dhcp enabled
         if intf_rec['dhcp_service'] != 'Enable':
@@ -93,9 +95,8 @@ class debugVertexVMI(baseVertex):
                    (intf_rec['uuid'], intf_rec['name'], intf_rec['dhcp_service'])
             error = True
             self.logger.error(pstr)
-            print pstr
         else:
-            self.logger.debug("Agent: Interface %s dhcp is enabled" % (intf_rec['name']))
+            self.logger.info("Agent: Interface %s dhcp is enabled" % (intf_rec['name']))
 
         # Is dns enabled
         if intf_rec['dns_service'] != 'Enable':
@@ -103,29 +104,21 @@ class debugVertexVMI(baseVertex):
                 (intf_rec['uuid'], intf_rec['name'], intf_rec['dns_service'])
             error = True
             self.logger.error(pstr)
-            print pstr
         else:
-            self.logger.debug("Agent: Interface %s dns is enabled" % (intf_rec['name']))
+            self.logger.info("Agent: Interface %s dns is enabled" % (intf_rec['name']))
 
         pstr = "Agent Verified interface %s %s" % (intf_rec['name'], 'with errors' if error else '')
-        self.logger.debug(pstr)
-        print pstr
+        self.logger.info(pstr)
         oper['interface'] = intf_details
         return oper
 
 def parse_args(args):
-    parser = ArgumentParser(description='Debug utility for VMI', add_help=True)
+    parser = ArgumentParser(description=debugVertexVMI.__doc__, add_help=True, formatter_class=RawTextHelpFormatter)
     return parser.parse_args(args)
 
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
     vVMI= debugVertexVMI(**args)
-    #context = vVMI.get_context()
-    #vertexPrint(context, detail=args.detail)
     vP = vertexPrint(vVMI)
-    #vP._visited_vertexes_brief(context)
-    #vP.print_visited_nodes(context, detail=False)
-    #vP.print_object_based_on_uuid( '9f838303-7d84-44c4-9aa3-b34a3e8e56b1',context, False)
-    #vP.print_object_catalogue(context, True)
     vP.convert_json()
     vP.convert_to_file_structure(console_print=True)
