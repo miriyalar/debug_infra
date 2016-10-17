@@ -133,6 +133,8 @@ class ContrailUtils(object):
                 analytics_ip = control_nodes['analytics_nodes'][0]['ip_address']
             uve_obj = ContrailUVE(ip=analytics_ip, port=analytics_port, token=self.token)
             vrouter_obj = uve_obj.get_object(fq_name, "virtual-machine", select_fields = ['UveVirtualMachineAgent.vrouter'])
+            if not vrouter_obj:
+                return contrail_info
             vrouter = {}
             vrouter_name = vrouter_obj['UveVirtualMachineAgent.vrouter']
             vrouter['hostname'] = vrouter_name
