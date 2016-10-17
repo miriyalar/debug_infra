@@ -1,0 +1,51 @@
+Description:
+Debugging of contrail system is not stright forward, as user needs to get to many components in the system to know about configuration and operational object's content/states.
+User has to go through multiple hops for config, control, analytics and agent to troubleshoot issues, and also sometimes need to login into the nodes to check
+the /var/log/contrail/<logs> to isolate issues.
+This tool automates the above process and produces the information about contrail objects collectively at one place, and by default produces json output.
+
+Check out:
+git clone https://github.com/miriyalar/debug_infra <contrail debug dir>
+
+Contrail debug tool configuration file prior to usage (debug.ini):
+cd <contrail debug dir>
+more debug.ini
+
+[auth]
+AUTHN_SERVER = 127.0.0.1
+AUTHN_PORT = 35357
+AUTHN_URL = /v2.0/tokens
+
+AUTHN_USER = admin
+AUTHN_PASSWORD = contrail123
+AUTHN_TENANT_NAME = admin
+
+[contrail]
+CONFIG_IP = 127.0.0.1
+CONFIG_PORT = 9100
+
+Configure the above ip addresses and config/authentication ports.
+
+Usage:
+This tool requires access to control network of the cluster, as it uses intropspect and REST api ports to conntect.
+debug*py scripts are present in this directory, based on debugging usage case. 
+Typically name should suggest about script that, it is debugging.
+
+debug*.py --help
+gives about script usage.
+
+Output:
+Script produces two files in the local directory where the scripts are gettting exectuted and console output for errors or warning or important information
+a> contrail_debug_output.json
+Json output contains summary of debug nodes, contrail status of required servers and details of each debug node.
+Open contrail_debug_output.json in a browser, which has jsonviwer plugin gives better output.
+or to view it on console execute the following command
+more contrail_debug_output.json | python -m json.tool
+
+b> debug_nodes.log
+Debugging code trace during the run
+
+c> console output
+Mainly produces errors or notable warnings or important information during the execution
+
+

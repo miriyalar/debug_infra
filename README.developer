@@ -1,14 +1,14 @@
 Check out:
-git clone https://github.com/miriyalar/debug_infra
+git clone https://github.com/miriyalar/debug_infra <contrail debug dir>
 
 Authentication:
 Multi tenany setup needs to make sure the debug.ini configured properly
 Modify debug.ini to reflect the keystone auth info and config api server info
 
 Usage:
-You can clone debug infra code to any server, where you got access to config node.
-git clone https://github.com/miriyalar/debug_infra
-cd <debug_infra dir>
+You can clone debug infra code to any server, where it has access to config node.
+git clone https://github.com/miriyalar/debug_infra <contrail debug dir>
+cd <contrail debug dir>
 
 Example:
 python debugvmi.py --uuid 060c2b5f-d43a-4ea5-844d-393819ff36fd
@@ -18,7 +18,8 @@ python debugvn.py --display_name testvn
 
 Output:
 Debugs are located at debug_nodes.log
-context output is at debug_vertexes_output.json [Open using firefox, somehow chrome json viewer extension is not working for me]
+context output is at contrail_debug_output.json [Need to add browser jsonviewer plugin to view the json output]
+or more contrail_debug_output.json | python -m json.tool
 User has an option to print output in file structure format and json format
 Usage:
    vp = vertexPrint(<vertex object>)
@@ -26,8 +27,7 @@ Usage:
    vp.convert_to_file_structure() --> for file structure output, default it will use the current dir (has an option to specify a path)
 
 Process of writing the code for new debugnode/debug vertex:
-Check debugsample.py for creating config objects debugging
-Check debugflow.py for flows
+Check debugsample.py for creating config objects debugging, and check debugflow.py for flows
 baseflowvertex.py and basevertex.py are base classes for flows and configuration objects
 
 High level details:
