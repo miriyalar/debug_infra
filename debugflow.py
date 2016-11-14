@@ -206,14 +206,12 @@ def parse_args(args):
     parser.add_argument('--source_ip', help='Source IP of the flow', required=True)
     parser.add_argument('--dest_ip', help='Destination IP of the flow', default='')
     parser.add_argument('--source_vn', help='VN of the source IP', default='')
-#    parser.add_argument('--source_vrf', help='VRF of the source IP', default='')
     parser.add_argument('--dest_vn', help='VN of the destination IP', default='')
-#    parser.add_argument('--dest_vrf', help='VRF of the destination IP', default='')
     parser.add_argument('--protocol', help='L3 Protocol of the flow', default='')
     parser.add_argument('--source_port', help='Source Port of the flow', default='')
     parser.add_argument('--dest_port', help='Destination Port of the flow', default='')
-    parser.add_argument('--source_ip_type', help='source ip type', default='instance-ip')
-    parser.add_argument('--dest_ip_type', help='dest ip type', default='instance-ip')
+    parser.add_argument('--source_ip_type', help='source ip type', default='')
+    parser.add_argument('--dest_ip_type', help='dest ip type', default='')
     return parser.parse_args(args)
 
 if __name__ == '__main__':
