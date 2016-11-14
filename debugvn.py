@@ -2,22 +2,24 @@
 #
 # Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
 #
-"""
-This is VN vertex to get VN information from config, control and relevant compute nodes
-Input: 
-   Mandatory: uuid | (object-type, uuid) [object_type and uuid has to be there in the schema_dict]
-Dependant vertexs:
-   VMI, RI
-"""
-
 import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
+from argparse import RawTextHelpFormatter
 import debugvmi
 import debugri
 
 class debugVertexVN(baseVertex):
+    """
+    This is VN vertex to get VN information from config, control and relevant compute nodes
+    Input: 
+         Mandatory: uuid | (object-type, uuid) [object_type and uuid has to be there in the schema_dict]
+    Output:
+         Console output, debug_nodes.log and contrail_debug_output.json
+    Dependant vertexs:
+         VMI, RI
+    """
     vertex_type = 'virtual-network'
 
     def __init__(self, **kwargs):
@@ -56,25 +58,17 @@ class debugVertexVN(baseVertex):
             error = True
             pstr = "Got more vn records, supposed to have one for uuid %s" % (vn_uuid)
             self.logger.error(pstr)
-            print pstr
         pstr = "Agent Verified virtual network %s %s" % (vn_uuid, 'with errors' if error else '')
-        self.logger.debug(pstr)
-        print pstr
+        self.logger.info(pstr)
         return oper
 
 def parse_args(args):
-    parser = ArgumentParser(description='Debug utility for VN', add_help=True)
+    parser = ArgumentParser(description=debugVertexVN.__doc__, add_help=True, formatter_class=RawTextHelpFormatter)
     parser.add_argument('--display_name', help='Display name')
     return parser.parse_args(args)
 
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
     vVN= debugVertexVN(**args)
-    #context = vVN.get_context()
-    #vertexPrint(context, detail=args.detail)
     vP = vertexPrint(vVN)
-    #vP._visited_vertexes_brief(context)
-    #vP.print_visited_nodes(context, detail=False)
-    #vP.print_object_catalogue(context, False)
-    #vP.print_visited_vertexes_inorder(context)
     vP.convert_json()

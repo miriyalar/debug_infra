@@ -55,7 +55,7 @@ class vertexPrint(object):
         objs['visited_vertexes'] = self.get_sorted_vv(visited_vertices)
         return objs
 
-    def convert_json(self, object_type=None, detail=True, file_name='debug_vertexes_output.json'):
+    def convert_json(self, object_type=None, detail=True, file_name='contrail_debug_output.json'):
         print_list = self._get_objects_from_context(object_type)
         print_list = Utils.remove_none(print_list)
         print_list = Utils.remove_none(print_list)

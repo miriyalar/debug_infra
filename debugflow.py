@@ -2,27 +2,31 @@
 #
 # Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
 #
-"""
-This is non config debugflow vertex to debug a given flow with 2 tuple to 7 tuple
-If the flow has service chain attached, it is required to give left and right VN of the flow.
-Input:
-   Mandatory: 3 tuple (source VN, source IP, dest IP)
-   Optional: Rest of 7 tuples (dest VN, source port, dest port, protocol)
-             ip_type is optional, takes 'instance-ip' or 'floating-ip',
-             default is 'instance-ip'
-Dependant vertexes:
-"""
-
 import sys
 from vertex_print import vertexPrint
 from baseflowvertex import baseFlowVertex
 from parser import ArgumentParser
+from argparse import RawTextHelpFormatter
 from basevertex import baseVertex
 from debugip import debugVertexIP
 from debugfip import debugVertexFIP
 import debugsc
 
 class debugVertexFlow(baseVertex):
+    """
+    Debug utility for Flow.
+
+    This is non config debugflow vertex to debug a given flow with 2 tuple to 7 tuple
+    If the flow has service chain attached, it is required to give left and right VN of the flow.
+    Input:
+         Mandatory: 3 tuple (source VN, source IP, dest IP)
+         Optional: Rest of 7 tuples (dest VN, source port, dest port, protocol)
+                   ip_type is optional, takes 'instance-ip' or 'floating-ip',
+    Output:
+         Console output, debug_nodes.log and contrail_debug_output.json
+    Dependant vertexes:
+         SC
+    """
     vertex_type = 'flow'
     non_config_obj = True
     ip_type = ['instance-ip', 'floating-ip', 'external']
@@ -39,10 +43,6 @@ class debugVertexFlow(baseVertex):
         self.dest_port = dest_port
         self.source_nip = kwargs.get('source_nip', '')
         self.dest_nip = kwargs.get('dest_nip', '')
-#        self.source_vrf = kwargs.get('source_vrf', '')
-#        self.dest_vrf = kwargs.get('dest_vrf', '')
-#        self.source_nvrf = kwargs.get('source_nvrf', '')
-#        self.dest_nvrf = kwargs.get('dest_nvrf', '')
         self.source_ip_type = kwargs.get('source_ip_type', '')
         self.dest_ip_type = kwargs.get('dest_ip_type', '')
         self.match_kv = {'source_ip': source_ip, 'dest_ip': dest_ip}
@@ -65,7 +65,6 @@ class debugVertexFlow(baseVertex):
                          self.source_vrf, self.dest_vrf,
                          self.source_port, self.dest_port,
                          self.protocol])
-# self.source_nvrf, self.dest_nvrf,
 
     def _get_vertex(self, address=None, ip_type=None, vn_fqname=None):
         vertex = None
@@ -202,7 +201,7 @@ class debugVertexFlow(baseVertex):
                            )
 
 def parse_args(args):
-    parser = ArgumentParser(description='Debug utility for Flow', add_help=True)
+    parser = ArgumentParser(description=debugVertexFlow.__doc__, add_help=True, formatter_class=RawTextHelpFormatter)
     parser.add_argument('--source_ip', help='Source IP of the flow', required=True)
     parser.add_argument('--dest_ip', help='Destination IP of the flow', default='')
     parser.add_argument('--source_vn', help='VN of the source IP', default='')
@@ -218,10 +217,3 @@ if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
     vFlow = debugVertexFlow(**args)
     vertexPrint(vFlow).convert_json()
-   #context = vIIP.get_context()
-    #vertexPrint(context, detail=args.detail)
-    #vP._visited_vertexes_brief(context)
-    #vP.print_visited_nodes(context, detail=False)
-    #vP.print_object_based_on_uuid( '9f838303-7d84-44c4-9aa3-b34a3e8e56b1',context, False)
-    #vP.print_object_catalogue(context, False)
-    #vP.print_visited_vertexes_inorder(context)

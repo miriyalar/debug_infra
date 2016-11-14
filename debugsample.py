@@ -2,21 +2,25 @@
 #
 # Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
 #
-"""
-This is sampple vertex 
-Input: 
-   Mandatory: uuid | fq_name
-   Optional: 
-Dependant vertexes:
-   VM, VN, SG, IP...
-"""
-
 import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
+from argparse import RawTextHelpFormatter
 
 class debugVertexSample(baseVertex):
+    """
+    This is sampple vertex.
+
+    Input: 
+         Mandatory: uuid | fq_name
+         Optional: 
+    Output:
+         Console output and contrail_debug_output.json, logs are at debug_nodes.log
+    Dependant vertexes:
+         VM, VN, SG, IP...
+    """
+
     # Whatever dependant vertexes to be processed after this vertex is processed
     # User has control of processing dependant object, depends on the depth specified during the invocation of
     # the vertex
@@ -24,6 +28,12 @@ class debugVertexSample(baseVertex):
 
     # Type of vertex, typically, it will coincide with config type
     vertex_type = 'virtual-machine-interface'
+
+    # non config obj, is to tell whether this object/uuid is present in config node or not
+    # default is config obj (False), if you are working on non_config_obj make it to 'True'
+    # non_config_obj 'True' also requires 'def locate_obj' method, 
+    # check debugVertexflow.py or debugVertexsc.py for reference.
+    non_config_obj = False
 
     # There are couple of abstract methods need to be defined for baseVertex inheritance
     # process_self and get_schema, the following are examples
@@ -84,7 +94,7 @@ class debugVertexSample(baseVertex):
         return oper
 
 def parse_args(args):
-    parser = ArgumentParser(description='Debug utility for VMI', add_help=True)
+    parser = ArgumentParser(description=debugVertexSample.__doc__, add_help=True, formatter_class=RawTextHelpFormatter)
     return parser.parse_args(args)
 
 if __name__ == '__main__':

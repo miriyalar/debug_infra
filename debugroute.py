@@ -2,20 +2,11 @@
 #
 # Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
 #
-"""
-This is non config route vertex to debug a route in the contrail.
-Vertex checks the route in control node and vrouter nodes. 
-This vertex also gives NH info corresponding to the route.
-Input: 
-   Mandatory: prefix, vn_fqname | ri_fqname
-   Optional: vrouters
-Dependant vertexes:
-"""
-
 import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
+from argparse import RawTextHelpFormatter
 from contrail_utils import ContrailUtils
 from contrailnode_api import Vrouter
 
@@ -24,6 +15,20 @@ def get_route_uuid(prefix, ri_fqname, vrouters):
                     [vrouter['hostname'] for vrouter in vrouters or []])
 
 class debugVertexRoute(baseVertex):
+    """
+    Debug utility for Route Verification.
+
+    This is non config route vertex to debug a route in contrail.
+    Vertex checks route in control node and vrouter nodes and gives NH info corresponding to route.
+    Input: 
+         Mandatory: prefix, vn_fqname | ri_fqname
+         Optional: vrouters
+    Output:
+         Console output and contrail_debug_output.json, logs are at debug_nodes.log
+    Dependant vertexes:
+         None
+    """
+
     vertex_type = 'route'
     non_config_obj = True
     def __init__(self, prefix=None, vn_fqname=None, ri_fqname=None,
@@ -124,7 +129,7 @@ class debugVertexRoute(baseVertex):
         return {'route': route}
 
 def parse_args(args):
-    parser = ArgumentParser(description='Debug utility for Route Verification', add_help=True)
+    parser = ArgumentParser(description=debugVertexRoute.__doc__, add_help=True, formatter_class=RawTextHelpFormatter)
     parser.add_argument('--ri_fqname', help='FQName of the Routing Instance')
     parser.add_argument('--vn_fqname', help='FQName of the Virtual Network')
     parser.add_argument('--prefix', help='Route prefix to verify')
@@ -134,11 +139,5 @@ def parse_args(args):
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
     vRoute = debugVertexRoute(**args)
-    #context = vSI.get_context()
-    #vertexPrint(context, detail=args.detail)
     vP = vertexPrint(vRoute)
-    #vP._visited_vertexes_brief(context)
-    #vP.print_visited_nodes(context, detail=False)
-    #vP.print_object_catalogue(context, False)
-    #vP.convert_to_file_structure(context)
     vP.convert_json()

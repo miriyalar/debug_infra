@@ -2,20 +2,26 @@
 #
 # Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
 #
-"""
-This is non config service chain vertex to debug service chain/s.
-Input:
-   Mandatory: left_vn, right_vn
-Dependant vertexes:
-"""
-
 import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
+from argparse import RawTextHelpFormatter
 import debugsi
 
 class debugVertexSC(baseVertex):
+    """
+    Debug utility for SC.
+
+    This is non config service chain vertex to debug service chain/s.
+    Input:
+         Mandatory: left_vn, right_vn
+    Output:
+         Console output and contrail_debug_output.json, logs are at debug_nodes.log
+    Dependant vertexes:
+         None 
+    """
+
     vertex_type = 'service-chain'
     non_config_obj = True
     def __init__(self, left_vn_fq_name=None, right_vn_fq_name=None,
@@ -80,7 +86,7 @@ class debugVertexSC(baseVertex):
             vertex['path'].append(si_path)
 
 def parse_args(args):
-    parser = ArgumentParser(description='Debug utility for SC', add_help=True)
+    parser = ArgumentParser(description=debugVertexSC.__doc__, add_help=True, formatter_class=RawTextHelpFormatter)
     parser.add_argument('--left_vn_fq_name', help='FQName of the Left VN', required=True)
     parser.add_argument('--right_vn_fq_name', help='FQName of the Right VN', required=True)
     parser.add_argument('--left_ip', help='Left CIDR specified in policy')
@@ -93,11 +99,5 @@ def parse_args(args):
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
     vSC= debugVertexSC(**args)
-    #context = vSI.get_context()
-    #vertexPrint(context, detail=args.detail)
     vP = vertexPrint(vSC)
-    #vP._visited_vertexes_brief(context)
-    #vP.print_visited_nodes(context, detail=False)
-    #vP.print_object_catalogue(context, False)
-    #vP.convert_to_file_structure(context)
     vP.convert_json()

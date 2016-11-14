@@ -2,22 +2,28 @@
 #
 # Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
 #
-"""
-This is service instance vertex to get information from control, config, schema, analytics 
-and relevant compute nodes.
-Input: 
-   Mandatory: uuid | fqname | service chain fq name
-Dependant vertexes:
-"""
-
 import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
+from argparse import RawTextHelpFormatter
 import debugvm
 import debugvmi
 
 class debugVertexSI(baseVertex):
+    """
+    Debug utility for SI.
+
+    This is service instance vertex to get information from control, config, schema, analytics 
+    and relevant compute nodes.
+    Input: 
+         Mandatory: uuid | fqname | service chain fq name
+    Output:
+         Console output and contrail_debug_output.json, logs are at debug_nodes.log
+    Dependant vertexes:
+         None
+    """
+
     vertex_type = 'service-instance'
     def __init__(self, **kwargs):
         self.sc_name = None
@@ -91,18 +97,12 @@ class debugVertexSI(baseVertex):
         vertex['vrouters'] = self.get_vrouters(vertex)
 
 def parse_args(args):
-    parser = ArgumentParser(description='Debug utility for SI', add_help=True)
+    parser = ArgumentParser(description=debugVertexSI.__doc__, add_help=True, formatter_class=RawTextHelpFormatter)
     parser.add_argument('--display_name', help='Display name')
     return parser.parse_args(args)
 
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
     vSI= debugVertexSI(**args)
-    #context = vSI.get_context()
-    #vertexPrint(context, detail=args.detail)
     vP = vertexPrint(vSI)
-    #vP._visited_vertexes_brief(context)
-    #vP.print_visited_nodes(context, detail=False)
-    #vP.print_object_catalogue(context, False)
-    #vP.convert_to_file_structure(context)
     vP.convert_json()

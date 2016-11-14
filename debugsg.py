@@ -2,21 +2,26 @@
 #
 # Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
 #
-"""
-This is security group vertex and gets SG information from config, control and relevant compute nodes.
-Input:
-   Mandatory: uuid | (object_type, uuid) [object_type and uuid has to be there in the schema_dict]
-Dependant vertexes:
-   VMI
-"""
-
 import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
+from argparse import RawTextHelpFormatter
 import debugvmi
 
 class debugVertexSG(baseVertex):
+    """
+    Debug utility for SG.
+
+    This is security group vertex and gets SG information from config, control and relevant compute nodes.
+    Input:
+         Mandatory: uuid | (object_type, uuid) [object_type and uuid has to be there in the schema_dict]
+    Output:
+         Console output and contrail_debug_output.json, logs are at debug_nodes.log
+    Dependant vertexes:
+         VMI
+    """
+
     vertex_type = 'security-group'
     def __init__(self, **kwargs):
         self.dependant_vertexes = [debugvmi.debugVertexVMI]
@@ -68,24 +73,17 @@ class debugVertexSG(baseVertex):
         else:
             error = True
         pstr = "Agent Verified security group %s %s" % (sg_uuid, 'with errors' if error else '')
-        self.logger.debug(pstr)
-        print pstr
+        self.logger.info(pstr)
         return oper
 
 
 def parse_args(args):
-    parser = ArgumentParser(description='Debug utility for SG', add_help=True)
+    parser = ArgumentParser(description=debugVertexSG.__doc__, add_help=True, formatter_class=RawTextHelpFormatter)
     parser.add_argument('--display_name', help='Display name')
     return parser.parse_args(args)
 
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
     vSG= debugVertexSG(**args)
-    #context = vSG.get_context()
-    #vertexPrint(context, detail=args.detail)
     vP = vertexPrint(vSG)
-    #vP._visited_vertexes_brief(context)
-    #vP.print_visited_nodes(context, detail=False)
-    #vP.print_object_catalogue(context, False)
-    #vP.convert_to_file_structure(context)
     vP.convert_json()

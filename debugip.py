@@ -2,20 +2,26 @@
 #
 # Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
 #
-"""
-This is IP vertex to get IP information from config, control and relevant compute nodes
-Input: 
-   Mandatory: uuid | instance_ip_address | (object_type, uuid)
-Dependant vertexes:
-"""
-
 import sys
 from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
+from argparse import RawTextHelpFormatter
 import debugvmi
 
 class debugVertexIP(baseVertex):
+    """
+    Debug utility for Instance IP.
+
+    This is IP vertex to get IP information from config, control and relevant compute nodes
+    Input: 
+         Mandatory: uuid | instance_ip_address | (object_type, uuid)
+    Output:
+         Console output, debug_nodes.log and contrail_debug_output.json
+    Dependant vertexes:
+         VMI
+    """
+
     vertex_type = 'instance-ip'
 
     def __init__(self, **kwargs):
@@ -93,12 +99,10 @@ class debugVertexIP(baseVertex):
                 pstr = "IP address %s is found in the interface rec %s" % \
                        (instance_ip_address, intf_rec['name'])
                 self.logger.info(pstr)
-                print pstr
             else:
                 pstr = "IP address %s is NOT found in the interface rec %s" % \
                        (instance_ip_address, intf_rec['name'])
                 self.logger.error(pstr)
-                print pstr
                 return oper
 
         # Get routing entry
@@ -108,13 +112,13 @@ class debugVertexIP(baseVertex):
         if check is True:
             nh_list = route['path_list']
             if nh_list:
-                print "Agent got nh for %s" % (instance_ip_address)
+                self.logger.info("Agent got nh for %s" % (instance_ip_address))
         else:
-            print "Agent Error doesn't have route for %s" % (instance_ip_address)
+            self.logger.error("Agent Error doesn't have route for %s" % (instance_ip_address))
         return oper
 
 def parse_args(args):
-    parser = ArgumentParser(description='Debug utility for IIP', add_help=True)
+    parser = ArgumentParser(description=debugVertexIP.__doc__, add_help=True, formatter_class=RawTextHelpFormatter)
     parser.add_argument('--instance_ip_address', help='Instance ip address to debug')
     parser.add_argument('--virtual_network', help='Virtual network uuid')
     return parser.parse_args(args)
@@ -122,14 +126,6 @@ def parse_args(args):
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
     vIIP= debugVertexIP(**args)
-
-    #context = vIIP.get_context()
-    #vertexPrint(context, detail=args.detail)
     vP = vertexPrint(vIIP)
-    #vP._visited_vertexes_brief(context)
-    #vP.print_visited_nodes(context, detail=False)
-    #vP.print_object_based_on_uuid( '9f838303-7d84-44c4-9aa3-b34a3e8e56b1',context, False)
-    #vP.print_object_catalogue(context, False)
-    #vP.print_visited_vertexes_inorder(context)
     vP.convert_json()
 

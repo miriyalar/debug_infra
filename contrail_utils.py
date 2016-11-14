@@ -1,16 +1,15 @@
 #
 # Copyright (c) 2016 Juniper Networks, Inc. All rights reserved.
 #
-"""
-Utilities to fetch cluster details including relevant compute nodes based on the given uuid
-"""
-
 import pdb
 import json
 from contrail_uve import ContrailUVE
 from contrail_api import ContrailApi
 
 class ContrailUtils(object):
+    """
+    Utilities to fetch cluster details including relevant compute nodes based on the given uuid
+    """
     def __init__(self, token=None):
         self.token = token
         self._agent_schema_dict = {
@@ -133,6 +132,8 @@ class ContrailUtils(object):
                 analytics_ip = control_nodes['analytics_nodes'][0]['ip_address']
             uve_obj = ContrailUVE(ip=analytics_ip, port=analytics_port, token=self.token)
             vrouter_obj = uve_obj.get_object(fq_name, "virtual-machine", select_fields = ['UveVirtualMachineAgent.vrouter'])
+            if not vrouter_obj:
+                return contrail_info
             vrouter = {}
             vrouter_name = vrouter_obj['UveVirtualMachineAgent.vrouter']
             vrouter['hostname'] = vrouter_name
