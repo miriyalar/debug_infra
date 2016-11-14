@@ -156,14 +156,13 @@ class Status(object):
         resp = self.keystone.authenticate()
         if resp.has_key('access'):
             self._token = resp['access']['token']['id']
-        hosts = hosts or []
-        #self.vrouters = [{'hostname': host} for host in hosts]
         self.vrouters = hosts
         (c_status, h_status, a_status) = ClusterStatus(token=self._token,
                         config_ip=self.args.get('config_ip'),
                         config_port=self.args.get('config_port'),
                         analytics_ip=self.args.get('analytics_ip'),
-                        analytics_port=self.args.get('analytics_port')).get(vrouters=self.vrouters)
+                        analytics_port=self.args.get('analytics_port')).get(uuid=uuid, uuid_type=uuid_type,
+                                                                            vrouters=self.vrouters)
         status = dict()
         status['cluster_status'] = c_status
         status['host_status'] = h_status

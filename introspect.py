@@ -352,6 +352,8 @@ class AgentIntrospect(Introspect):
             return None
         url_path = 'Snh_VrfListReq?name=%s'%vrf_fqname
         response = self.get(url_path)
+        if not response['vrf_list']:
+            return None
         return [x['ucindex'] for x in response['vrf_list'] if x['name'] == vrf_fqname][0]
 
     def is_prefix_exists(self, vrf_fq_name, prefix, plen=32):

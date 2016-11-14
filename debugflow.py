@@ -204,7 +204,7 @@ def parse_args(args):
     parser = ArgumentParser(description=debugVertexFlow.__doc__, add_help=True, formatter_class=RawTextHelpFormatter)
     parser.add_argument('--source_ip', help='Source IP of the flow', required=True)
     parser.add_argument('--dest_ip', help='Destination IP of the flow', default='')
-    parser.add_argument('--source_vn', help='VN of the source IP', default='')
+    parser.add_argument('--source_vn', help='VN of the source IP', required=True)
     parser.add_argument('--dest_vn', help='VN of the destination IP', default='')
     parser.add_argument('--protocol', help='L3 Protocol of the flow', default='')
     parser.add_argument('--source_port', help='Source Port of the flow', default='')

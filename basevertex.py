@@ -65,7 +65,7 @@ class baseVertex(object):
                 self.match_kv = {'uuid': self.uuid, 'fq_name': self.fq_name,
                                  'display_name': self.display_name}
             if not any(self.match_kv.itervalues()):
-                raise Exception('Nothing to match, please check match args')
+                raise Exception('Nothing to match, please check match args or check help')
         self._process_vertexes(self.locate_obj())
 
     @abstractmethod

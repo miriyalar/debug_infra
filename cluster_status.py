@@ -47,7 +47,8 @@ class ClusterStatus(object):
         for hostname in vrouters:
             node_type = 'vrouter'
             node_status = uve.get_object(hostname, node_type, 
-                                         select_fields=['NodeStatus.process_status', 'VrouterAgent.xmpp_peer_list','UVEAlarms'], 
+                                         select_fields=['NodeStatus.process_status', 'VrouterAgent.xmpp_peer_list',
+                                                        'VrouterAgent.control_ip','UVEAlarms'], 
                                          found_error=False)
             contrail_status['vrouter'].append(node_status)
             host_status[hostname][node_type] = node_status
