@@ -24,7 +24,7 @@ class debugVertexSample(baseVertex):
     # Whatever dependant vertexes to be processed after this vertex is processed
     # User has control of processing dependant object, depends on the depth specified during the invocation of
     # the vertex
-    dependant_vertexes = ['debugVertexVM', 'debugVertexVN', 'debugVertexSG', 'debugVertexIP']
+    self.dependant_vertexes = ['debugVertexVM', 'debugVertexVN', 'debugVertexSG', 'debugVertexIP']
 
     # Type of vertex, typically, it will coincide with config type
     vertex_type = 'virtual-machine-interface'

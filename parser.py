@@ -36,6 +36,7 @@ class ArgumentParser(argparse.ArgumentParser):
         self.add_argument("-d", "--discard", help="Disable dump of json output to file", action="store_true")
         self.add_argument("-D", "--depth", type=int, default=-1, help="Depth of the dependent vertexes to process")
         self.add_argument("-V", "--verify", help="Verify objects", action="store_true")
+        self.add_argument("--token", help="Auth Token to use to talk to Config/Analytics Rest API Services")
         self.add_argument("--username", help="stack username")
         self.add_argument("--password", help="stack password")
         self.add_argument("--tenant", help="stack tenant")
@@ -55,12 +56,14 @@ class ArgumentParser(argparse.ArgumentParser):
                                'AUTHN_PORT', '35357')
             pargs['auth_url_path'] = self.read_config_option(config, 'auth',
                                'AUTHN_URL', '/v2.0/tokens')
-            pargs['username'] = pargs['username'] or self.read_config_option(
-                               config, 'auth', 'AUTHN_USER', 'admin')
-            pargs['password'] = pargs['password'] or self.read_config_option(
-                               config, 'auth', 'AUTHN_PASSWORD', 'contrail123')
-            pargs['tenant'] = pargs['tenant'] or self.read_config_option(
-                               config, 'auth', 'AUTHN_TENANT_NAME', 'admin')
+            pargs['username'] = pargs['username'] or os.getenv('OS_USERNAME') or \
+                 self.read_config_option(config, 'auth', 'AUTHN_USER', 'admin')
+            pargs['password'] = pargs['password'] or os.getenv('OS_PASSWORD') or \
+                 self.read_config_option(config, 'auth', 'AUTHN_PASSWORD', 'contrail123')
+            pargs['tenant'] = pargs['tenant'] or os.getenv('OS_TENANT_NAME') or \
+                 self.read_config_option(config, 'auth', 'AUTHN_TENANT_NAME', 'admin')
+            pargs['token'] = pargs['token'] or os.getenv('OS_TOKEN') or \
+                 self.read_config_option(config, 'auth', 'AUTHN_TOKEN', None)
             pargs['config_ip'] = self.read_config_option(config, 'contrail',
                                 'CONFIG_IP', '127.0.0.1')
             pargs['config_port'] = self.read_config_option(config, 'contrail',
