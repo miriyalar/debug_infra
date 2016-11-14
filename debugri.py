@@ -7,6 +7,7 @@ from vertex_print import vertexPrint
 from basevertex import baseVertex
 from parser import ArgumentParser
 import debugvn
+from argparse import RawTextHelpFormatter
 
 class debugVertexRI(baseVertex):
     """

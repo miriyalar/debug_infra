@@ -18,6 +18,7 @@ class ContrailUtils(object):
             'security-group' : 'virtual_machine_interface_back_refs.virtual_machine_refs',
             'virtual-machine-interface': 'virtual_machine_refs',
             'instance-ip': 'virtual_machine_interface_refs.virtual_machine_refs',
+            'routing-instance': 'virtual_machine_interface_back_refs.virtual_machine_refs',
             'service-instance': ['virtual_machine_back_refs',
                                  'port_tuples.virtual_machine_interface_back_refs.virtual_machine_refs']
         }

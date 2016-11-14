@@ -23,7 +23,7 @@ class debugVertexVN(baseVertex):
     vertex_type = 'virtual-network'
 
     def __init__(self, **kwargs):
-        dependant_vertexes = [debugvmi.debugVertexVMI, debugri.debugVertexRI]
+        self.dependant_vertexes = [debugvmi.debugVertexVMI, debugri.debugVertexRI]
         super(debugVertexVN, self).__init__(**kwargs)
 
     def get_schema(self, **kwargs):
@@ -34,6 +34,9 @@ class debugVertexVN(baseVertex):
                 },
                 "virtual-machine-interface": {
                     "uuid": 'virtual_network_refs'
+                },
+                "routing-instance": {
+                    "uuid": 'parent_href'
                 }
         }
         return schema_dict
