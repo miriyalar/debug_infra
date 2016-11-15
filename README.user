@@ -25,6 +25,8 @@ CONFIG_IP = 127.0.0.1
 CONFIG_PORT = 9100
 
 Configure the above ip addresses and config/authentication ports.
+If you don't know authentication section [auth] information, get a token from the cluster admin to acess the cluster. 
+Check following section for token usage.
 
 Usage:
 This tool requires access to control network of the cluster, as it uses intropspect and REST api ports to conntect.
@@ -33,6 +35,7 @@ Typically name should suggest about script that, it is debugging.
 
 debug*.py --help
 gives about script usage.
+pass token via --token option, if you haven't filled in the [auth] section in the above debug.ini file.
 
 Output:
 Script produces two files in the local directory where the scripts are gettting exectuted and console output for errors or warning or important information
@@ -47,5 +50,8 @@ Debugging code trace during the run
 
 c> console output
 Mainly produces errors or notable warnings or important information during the execution
+
+Token generation:
+Cluster admin can generate a token via 'keystone token-get' and use the 'id' as token.
 
 
