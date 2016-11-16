@@ -8,6 +8,7 @@ Contrail cluster status, also takes uuid of an object and gets the status of rel
 from contrail_utils import ContrailUtils
 from contrail_uve import ContrailUVE
 from collections import defaultdict
+from utils import Utils
 
 class ClusterStatus(object):
     def __init__(self, config_ip='127.0.0.1', config_port='8082', 
@@ -25,7 +26,8 @@ class ClusterStatus(object):
         alarm_status = defaultdict(dict)
         contrail = ContrailUtils(token=self.token).get_contrail(self.config_ip, self.config_port, 
                                                                 uuid_type=uuid_type, uuid=uuid)
-        analytics_ip = self.analytics_ip or contrail['control']['analytics_nodes'][0]['ip_address']
+        analytics_ip = self.analytics_ip or Utils.get_debug_ip(hostname=contrail['control']['analytics_nodes'][0]['hostname'],
+                                                               ip_address=contrail['control']['analytics_nodes'][0]['ip_address'])
         analytics_port = self.analytics_port or contrail['control']['analytics_nodes'][0]['port']
         uve = ContrailUVE(ip=analytics_ip, port=analytics_port, token=self.token)
         for node_type, node_list  in contrail['control'].iteritems():

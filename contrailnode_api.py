@@ -8,6 +8,7 @@ Maintain connections to config, control, analytics and vrouter nodes
 from introspect import ControllerIntrospect, AgentIntrospect, SchemaIntrospect
 from contrail_api import ContrailApi
 from contrail_uve import ContrailUVE
+from utils import Utils
 
 class ContrailNodes:
     def __init__(self, contrail_info):
@@ -22,7 +23,8 @@ class AnalyticsNode:
         self._analytics_api = None
         self.token = token
         for node in analytics_nodes:
-            self._analytics_api = ContrailUVE(ip=node['ip_address'],
+            ip = Utils.get_debug_ip(hostname=node['hostname'], ip_address=node['ip_address'])
+            self._analytics_api = ContrailUVE(ip=ip,
                                               port=port or node['port'],
                                               token=self.token)
             break
@@ -46,10 +48,11 @@ class ConfigNode:
         for node in config_nodes:
             if not any(n['ip_address'] == node['ip_address'] for n in self.config_api):
                 capi = {}
+                ip = Utils.get_debug_ip(hostname=node['hostname'], ip_address=node['ip_address'])
                 capi['ip_address'] = node['ip_address']
                 capi['port'] = node['port']
                 capi['hostname'] = node['hostname']
-                capi['obj'] = ContrailApi(ip=capi['ip_address'], port=capi['port'], token=self.token)
+                capi['obj'] = ContrailApi(ip=ip, port=capi['port'], token=self.token)
                 self.config_api.append(capi)
 
     def get_fqname_to_id(self, obj_type, fq_name):
@@ -130,7 +133,9 @@ class IntrospectNode(object):
         self.handles = dict()
         for node in self.nodes:
             port = port or node.get('sandesh_http_port')
-            self.handles[node['ip_address']] = _cls(ip=node['ip_address'],
+            ip = Utils.get_debug_ip(hostname=node['hostname'],
+                                    ip_address=node['ip_address'])
+            self.handles[node['ip_address']] = _cls(ip=ip,
                                                     port=port)
     def get_nodes(self):
         return self.nodes

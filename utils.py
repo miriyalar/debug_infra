@@ -2,6 +2,7 @@ import os
 import json
 import types
 from collections import OrderedDict
+import socket
 
 class Utils():
     def convert_unicode():
@@ -95,6 +96,18 @@ class Utils():
         else:
             return data
 
+
+    @staticmethod
+    def get_debug_ip(hostname=None, ip_address=None):
+        if not hostname and not ip_address:
+            return '127.0.0.1'
+        if hostname:
+            try:
+                return socket.gethostbyname(hostname)
+            except:
+                return ip_address
+        else:
+            return ip_address
 
 
 class DictDiffer(object):

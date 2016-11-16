@@ -101,6 +101,15 @@ class contrailOutputJson(object):
         fh.close()
         return alarms
 
+    def get_status(self):
+        fh = self.open_file(self.filename)
+        if not fh:
+            return []
+        data = json.loads(fh.read())
+        cs = data.get('cluster_status', {})
+        fh.close()
+        return cs
+
     def get_host_status(self, hostname=None):
         fh = self.open_file(self.filename)
         if not fh:
