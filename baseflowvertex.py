@@ -139,12 +139,12 @@ class baseFlowVertex(baseVertex):
         flows = list()
         self.src_vrf_id = introspect.get_vrf_id(self.source_vrf)
         if self.source_vrf and not self.src_vrf_id:
-           self.logger.error('vrf id is not present in agent %s, for vrf name %s' % \
+           self.logger.warning('vrf id is not present in agent %s, for vrf name %s' % \
                              (introspect._ip, self.src_vrf))
-        if self.dest_vrf and not self.dest_vrf_id:
-           self.logger.error('vrf id is not present in agent %s, for vrf name %s' % \
-                             (introspect._ip, self.dest_vrf))
         self.dest_vrf_id = introspect.get_vrf_id(self.dest_vrf)
+        if self.dest_vrf and not self.dest_vrf_id:
+           self.logger.warning('vrf id is not present in agent %s, for vrf name %s' % \
+                             (introspect._ip, self.dest_vrf))
         flow = introspect.get_matching_flows(self.source_ip, self.dest_ip,
                                              self.protocol, self.source_port,
                                              self.dest_port, self.src_vn_fqname,

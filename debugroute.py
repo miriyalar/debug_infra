@@ -107,12 +107,12 @@ class debugVertexRoute(baseVertex):
         (exists, route) = introspect.is_route_exists(self.ri[vertex['uuid']],
                                                     self.prefix)
         if not exists:
-            self.logger.warn('Route for %s doesnt exist in VRF %s of agent %s'%(
+            self.logger.error('Route for %s doesnt exist in VRF %s of agent %s'%(
                           self.prefix, self.ri[vertex['uuid']], introspect._ip))
         (exists, kroute) = introspect.is_kroute_exists(self.prefix,
                                       vrf_fq_name=self.ri[vertex['uuid']])
         if not exists:
-            self.logger.warn('Route for %s doesnt exist in VRF %s of kernel %s'%(
+            self.logger.error('Route for %s doesnt exist in VRF %s of kernel %s'%(
                           self.prefix, self.ri[vertex['uuid']], introspect._ip))
         for rt in kroute:
             nh = rt.get('nh_id')
@@ -124,7 +124,7 @@ class debugVertexRoute(baseVertex):
         (exists, route) = introspect.is_route_exists(self.ri[vertex['uuid']],
                                                     self.prefix)
         if not exists:
-            self.logger.warn('Route for %s doesnt exist in VRF %s of control %s'%(
+            self.logger.error('Route for %s doesnt exist in VRF %s of control %s'%(
                           self.prefix, self.ri[vertex['uuid']], introspect._ip))
         return {'route': route}
 
