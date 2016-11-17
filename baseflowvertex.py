@@ -129,7 +129,7 @@ class baseFlowVertex(baseVertex):
                                   flow.get('action'), flow.get('flags')))
                 
         else:
-            self.logger.info('Kernel(%s): Unable to find matching flow for sip/port %s/%s, dip/port %s/%s, protocol %s, snip %s, dnip %s, svn %s, dvn %s' % \
+            self.logger.error('Kernel(%s): Unable to find matching flow for sip/port %s/%s, dip/port %s/%s, protocol %s, snip %s, dnip %s, svn %s, dvn %s' % \
                              (introspect._ip, self.source_ip, self.source_port, self.dest_ip, self.dest_port, self.protocol,
                               self.source_nip, self.dest_nip,
                               self.src_vn_fqname, self.dest_vn_fqname))
@@ -157,7 +157,7 @@ class baseFlowVertex(baseVertex):
                               self.source_ip, self.dest_ip))
             flows.extend(flow)
         else:
-            self.logger.info('Agent(%s): Unable to find matching flow for sip/port %s/%s, dip/port %s/%s, protocol %s, snip %s, dnip %s, svn %s, dvn %s' % \
+            self.logger.error('Agent(%s): Unable to find matching flow for sip/port %s/%s, dip/port %s/%s, protocol %s, snip %s, dnip %s, svn %s, dvn %s' % \
                              (introspect._ip, self.source_ip, self.source_port, self.dest_ip, self.dest_port, self.protocol, 
                               self.source_nip, self.dest_nip, self.src_vn_fqname, self.dest_vn_fqname))
         for flow in flows:
