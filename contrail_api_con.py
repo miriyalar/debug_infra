@@ -71,7 +71,7 @@ class ContrailApiConnection:
 
         json_data = json.loads(resp)
         tdict = Utils.convert_unicode(json_data)
-        if tdict and ref:
+        if type(tdict) == 'dict' and ref:
             tdict['ref'] = url
         return tdict 
 

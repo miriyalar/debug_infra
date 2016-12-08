@@ -275,6 +275,8 @@ class ContrailUtils(object):
                 fq_name = ':'.join(vm['virtual-machine']['fq_name'])
                 vrouter_obj = uve_obj.get_object(fq_name, "virtual-machine", 
                                                  select_fields = ['UveVirtualMachineAgent.vrouter'])
+                test_obj = uve_obj.get_object(fq_name, "virtual-machine", 
+                                                 select_fields = ['UveVirtualMachineAgent.vrouter', 'VirtualMachineStats.cpu_stats'])
                 vrouter = {}
                 vrouter_name = vrouter_obj['UveVirtualMachineAgent.vrouter']
                 vrouter['hostname'] = vrouter_name

@@ -62,8 +62,9 @@ class ClusterStatus(object):
 if __name__ == '__main__':
     cluster_status, host_status, alarm_status = ClusterStatus(config_ip='10.84.17.5', config_port='8082').get()
     import pdb; pdb.set_trace()
-    cluster_status, host_status, alarm_status = ClusterStatus(config_ip='10.84.17.5', config_port='8082').get(uuid_type='virtual-machine-interface', uuid='060c2b5f-d43a-4ea5-844d-393819ff36fd')
-    
+    #cluster_status, host_status, alarm_status = ClusterStatus(config_ip='10.84.17.5', config_port='8082').get(uuid_type='virtual-machine-interface', uuid='060c2b5f-d43a-4ea5-844d-393819ff36fd')
+    cluster_status, host_status, alarm_status = ClusterStatus(config_ip='10.84.17.5', config_port='8082').get(uuid_type='virtual-machine-interface', uuid='aceebec4-63ed-4ea9-9e00-e38cf28da6ac')
+    import pdb; pdb.set_trace()
         
 
     
