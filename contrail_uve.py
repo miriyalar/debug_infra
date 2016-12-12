@@ -254,8 +254,11 @@ class ContrailUVE:
             where = ''
         objpath_list_str = ','.join(select_fields)
         values = self.get_object_deep(objname, objpath_list_str, where=where)
-        keys = select_fields
-        ret_dict = {k: v for k, v in zip(keys, values)}
+        if not object_name and not select_fields:
+            ret_dict = {obj_type: values}
+        else:
+            keys = select_fields
+            ret_dict = {k: v for k, v in zip(keys, values)}
         return ret_dict
         '''
         uve_path = "analytics/uves/" + obj_type
@@ -287,15 +290,32 @@ class ContrailUVE:
         return ret_dict
         '''
 
+def get_dashboard(analytics_ip = '10.84.17.5', port = 8081):
+    from collections import OrderedDict
+    dashboard = OrderedDict({
+        'vrouter': {'object_type': 'vrouter', 'description': 'Virtual Routers'},
+        'config-node': {'object_type': 'config-node', 'description': 'Config Nodes'},
+        'control-node': {'object_type': 'control-node', 'description': 'Control Nodes'},
+        'database-node': {'object_type': 'database-node', 'description': 'Database Nodes'},
+        'analytics-node': {'object_type': 'analytics-node', 'description': 'Analytics Nodes'},
+        'virtual-machine-interface': {'object_type': 'virtual-machine-interface', 'description': 'Interfaces'},
+        'virtual-machine': {'object_type': 'virtual-machine', 'description': 'Instances'},        
+    })
+    uve_obj = ContrailUVE(ip = analytics_ip, port = port)
+    object_name = ''
+    for k, entry in dashboard.iteritems():
+        objs = uve_obj.get_object(object_name, entry['object_type'])
+        entry['count'] = len(objs[entry['object_type']])
+    return dashboard
+    
 def get_vm_info(uuid = ""):
     uve_obj = ContrailUVE(ip = "10.84.17.5", port = 8081)
     fq_name = 'b9ed1f6f-4846-4492-a151-0bd50e02c7cd'
     vrouter_obj = uve_obj.get_object(fq_name, "virtual-machine", 
                                      select_fields = ['UveVirtualMachineAgent.vrouter'])
-    print vrouter_obj
+    vrouters = uve_obj.get_object('', 'vrouter')
     test_obj = uve_obj.get_object(fq_name, "virtual-machine", 
                                   select_fields = ['UveVirtualMachineAgent.vrouter', 'VirtualMachineStats.cpu_stats'])
-    print test_obj
     #node_status = uve_obj.get_object_deep('analytics/uves/vrouter', 'NodeStatus.deleted', where='name=a3s19')
     vrouters = uve_obj.get_object_deep('analytics/uves/vrouter')
     print "Virtual Routers: %s" % (len(vrouters))
@@ -328,4 +348,5 @@ if __name__ == "__main__":
 #    test_first_floating_ip('7.7.7.3')
 #    optimize_floating_ip_de_ref(given_ip= '7.7.7.3')
     #debug_floating_ip('7.7.7.3')
-    get_vm_info(uuid = "")
+    #get_vm_info(uuid = "")
+    get_dashboard()
