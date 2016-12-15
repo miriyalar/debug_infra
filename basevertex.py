@@ -240,6 +240,9 @@ class baseVertex(object):
         ret_obj_list, self.config_objs = self.config.get_object(object_type,
                                                                 schema_to_use=schema_to_use,
                                                                 where=where)
+        if not ret_obj_list:
+            self.logger.error('Unable find resource %s, from %s, where %s' % \
+                              (self.vertex_type, self.obj_type, where))
         return ret_obj_list
 
     def _get_where_clause_for_non_config(self, schema_to_use, key):

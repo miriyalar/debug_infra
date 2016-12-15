@@ -32,6 +32,8 @@ class vertexPrint(object):
     def get_sorted_vv(self, vertices):
         new_dict = OrderedDict()
         vertex_type = self.context.get_debugged_vertex()
+        if not vertices:
+            return new_dict
         val = vertices.pop(vertex_type)
         new_dict.update({vertex_type: val})
         new_dict.update(vertices)
