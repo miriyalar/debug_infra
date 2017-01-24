@@ -32,11 +32,12 @@ class debugVertexRoute(baseVertex):
     vertex_type = 'route'
     non_config_obj = True
     def __init__(self, prefix=None, vn_fqname=None, ri_fqname=None,
-                 vrouters=None, **kwargs):
+                 vrouters=None, rt_type=None, **kwargs):
         self.vrouters = vrouters
         self.ri_fqname = ri_fqname
         self.vn_fqname = vn_fqname
         self.prefix = prefix
+        self.rt_type = rt_type
         self.ri = dict()
         self.match_kv = {'dummy': 'dummy'}
         super(debugVertexRoute, self).__init__(**kwargs)
@@ -105,11 +106,11 @@ class debugVertexRoute(baseVertex):
     def _get_agent_oper_db(self, introspect, vertex):
         knh = list()
         (exists, route) = introspect.is_route_exists(self.ri[vertex['uuid']],
-                                                    self.prefix)
+                                                    self.prefix, self.rt_type)
         if not exists:
             self.logger.error('Route for %s doesnt exist in VRF %s of agent %s'%(
                           self.prefix, self.ri[vertex['uuid']], introspect._ip))
-        (exists, kroute) = introspect.is_kroute_exists(self.prefix,
+        (exists, kroute) = introspect.is_kroute_exists(self.prefix, self.rt_type,
                                       vrf_fq_name=self.ri[vertex['uuid']])
         if not exists:
             self.logger.error('Route for %s doesnt exist in VRF %s of kernel %s'%(
@@ -122,7 +123,7 @@ class debugVertexRoute(baseVertex):
 
     def _get_control_oper_db(self, introspect, vertex):
         (exists, route) = introspect.is_route_exists(self.ri[vertex['uuid']],
-                                                    self.prefix)
+                                                    self.prefix, self.rt_type)
         if not exists:
             self.logger.error('Route for %s doesnt exist in VRF %s of control %s'%(
                           self.prefix, self.ri[vertex['uuid']], introspect._ip))
@@ -134,6 +135,7 @@ def parse_args(args):
     parser.add_argument('--vn_fqname', help='FQName of the Virtual Network')
     parser.add_argument('--prefix', help='Route prefix to verify')
     parser.add_argument('--vrouters', help='List of vrouters to verify')
+    parser.add_argument('--rt_type', help='Routing Table type where route belongs to (inet/inet6/bridge/evpn)')
     return parser.parse_args(args)
 
 if __name__ == '__main__':

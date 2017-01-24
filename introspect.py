@@ -237,16 +237,33 @@ class ControllerIntrospect(Introspect):
         neighbors = url_dict_resp['ifmap_db'][0]['neighbors']
         return neighbors
 
-    def get_routes(self, vrf_fq_name):
-        url_path = 'Snh_ShowRouteReq?x=%s.inet.0'%vrf_fq_name
+    def get_routes(self, vrf_fq_name, url_path):
         return self.get(path=url_path)
 
-    def is_route_exists(self, vrf_fq_name, address):
-        routes = self.get_routes(vrf_fq_name)
+    def is_route_exists(self, vrf_fq_name, address, rt_type):
+        if rt_type == 'inet':
+            rt_name = 'inet'
+        elif rt_type == 'inet6':
+            rt_name = 'inet6'
+        elif ((rt_type == 'bridge') or (rt_type == 'evpn')):
+            rt_name = 'evpn'
+        else:
+            rt_name = None
+        if (rt_type == 'evpn'):
+            prefix = address.split(',')
+        url_path = 'Snh_ShowRouteReq?x=%s.%s.0'%(vrf_fq_name, rt_name)
+        routes = self.get_routes(vrf_fq_name, url_path)
         route_list = list()
         for route in routes['tables'][0]['routes']:
-            if IPAddress(address) in IPNetwork(route['prefix']):
-                route_list.append(route)
+            if ((rt_type == 'inet') or (rt_type == 'inet6')):
+                if IPAddress(address) in IPNetwork(route['prefix']):
+                    route_list.append(route)
+            if (rt_type == 'bridge'):
+                if address in route['prefix']:
+                    route_list.append(route)
+            if (rt_type == 'evpn'):
+                if ((prefix[0] in route['prefix']) and (prefix[1] in route['prefix'])):
+                    route_list.append(route)
         if route_list:
             return (True, route_list)
         return (False, routes)
@@ -300,18 +317,16 @@ class AgentIntrospect(Introspect):
                     node_type or '', fq_name_str or '')
         return self.get(path=url_path)
 
-    def get_routes(self, vrf_fq_name):
-        url_path = 'Snh_PageReq?x=begin:-1,end:-1,table:%s.uc.route.0'%vrf_fq_name
+    def get_routes(self, vrf_fq_name, url_path):
         return self.get(path=url_path)
 
-    def get_kroutes(self, vrf_id=None, vrf_fq_name=None):
+    def get_kroutes(self, vrf_id=None, vrf_fq_name=None, url_path=None):
         if not vrf_id and vrf_fq_name:
             vrf_id = self.get_vrf_id(vrf_fq_name)
         if not vrf_id:
             self.log.debug('Unable to find vrf_id %s fq_name %s on node %s'%(
                             vrf_id, vrf_fq_name, self._ip))
             return []
-        url_path = 'Snh_KRouteReq?vrf_id=%s'%vrf_id
         return self.get(path=url_path)
 
     def get_flows(self):
@@ -357,38 +372,79 @@ class AgentIntrospect(Introspect):
         return [x['ucindex'] for x in response['vrf_list'] if x['name'] == vrf_fqname][0]
 
     def is_prefix_exists(self, vrf_fq_name, prefix, plen=32):
-        (exists, routes) = self.is_route_exists(vrf_fq_name, prefix)
+        (exists, routes) = self.is_route_exists(vrf_fq_name, prefix, rt_type='inet')
         if exists:
             for route in routes:
                 if route['src_ip'] == prefix and route['src_plen'] == str(plen):
                     return (True, route)
         return (False, None)
 
-    def is_route_exists(self, vrf_fq_name, address, lpm=False):
-        routes = self.get_routes(vrf_fq_name)
+    def is_route_exists(self, vrf_fq_name, address, rt_type, lpm=False):
+        if rt_type == 'inet':
+            rt_name = 'uc.route'
+        elif rt_type == 'inet6':
+            rt_name = 'uc.route6'
+        elif rt_type == 'bridge':
+            rt_name = 'l2.route'
+        elif rt_type == 'evpn':
+            rt_name = 'evpn.route'
+        else:
+            rt_name = None
+        if (rt_type == 'evpn'):
+            prefix = address.split(',')
+
+        url_path = 'Snh_PageReq?x=begin:-1,end:-1,table:%s.%s.0'%(vrf_fq_name, rt_name)
+        routes = self.get_routes(vrf_fq_name, url_path)
         if not routes or not routes.get('route_list'):
             self.log.debug('No route exists on vrf %s in %s'%(vrf_fq_name, self._ip))
             return (False, [])
         route_list = list()
         for route in routes['route_list']:
-            if IPAddress(address) in IPNetwork('%s/%s'%(route['src_ip'],
+            if ((rt_type == 'inet') or (rt_type == 'inet6')):
+                if IPAddress(address) in IPNetwork('%s/%s'%(route['src_ip'],
                                                         route['src_plen'])):
-                route_list.append(route)
+                    route_list.append(route)
+            if (rt_type == 'bridge'):
+                if address in route['mac']:
+                    route_list.append(route)
+            if (rt_type == 'evpn'):
+                if ((prefix[0] in route['mac']) and (prefix[1] in route['mac'])):
+                    route_list.append(route)
         if route_list:
             return (True, route_list[-1:] if lpm else route_list)
         self.log.debug('route for %s doesnt exist on vrf %s in %s'%(address, vrf_fq_name, self._ip))
         return (False, routes)
 
-    def is_kroute_exists(self, address, vrf_id=None, vrf_fq_name=None, lpm=False):
-        routes = self.get_kroutes(vrf_id=vrf_id, vrf_fq_name=vrf_fq_name)
+    def is_kroute_exists(self, address, rt_type, vrf_id=None, vrf_fq_name=None, lpm=False):
+        if rt_type == 'inet':
+            family_name = 'inet'
+        elif rt_type == 'inet6':
+            family_name = 'inet6'
+        elif ((rt_type == 'bridge') or (rt_type == 'evpn')):
+            family_name = 'bridge'
+        else:
+            family_name = None
+        if (rt_type == 'evpn'):
+            prefix = address.split(',')
+        if not vrf_id and vrf_fq_name:
+            vrf_id = self.get_vrf_id(vrf_fq_name)
+        url_path = 'Snh_KRouteReq?vrf_id=%s&family=%s'%(vrf_id, family_name)
+        routes = self.get_kroutes(vrf_id=vrf_id, vrf_fq_name=vrf_fq_name, url_path=url_path)
         if not routes or not routes.get('rt_list'):
             self.log.debug('No route exists on vrf %s in %s'%(vrf_id, self._ip))
             return (False, [])
         route_list = list()
         for route in routes['rt_list']:
-            if IPAddress(address) in IPNetwork('%s/%s'%(route['prefix'],
+            if ((rt_type == 'inet') or (rt_type == 'inet6')):
+                if IPAddress(address) in IPNetwork('%s/%s'%(route['prefix'],
                                                         route['prefix_len'])):
-                route_list.append(route)
+                    route_list.append(route)
+            if (rt_type == 'bridge'):
+                if address in route['rtr_mac']:
+                    route_list.append(route)
+            if (rt_type == 'evpn'):
+                if prefix[0] in route['rtr_mac']:
+                    route_list.append(route)
         if route_list:
             return (True, route_list[-1:] if lpm else route_list)
         self.log.debug('route for %s doesnt exist on vrf %s in %s'%(address, vrf_id, self._ip))
