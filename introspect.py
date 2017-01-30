@@ -249,6 +249,9 @@ class ControllerIntrospect(Introspect):
             rt_name = 'evpn'
         else:
             rt_name = None
+            routes = None
+            return(False, routes)
+
         if (rt_type == 'evpn'):
             prefix = address.split(',')
         url_path = 'Snh_ShowRouteReq?x=%s.%s.0'%(vrf_fq_name, rt_name)
@@ -390,6 +393,9 @@ class AgentIntrospect(Introspect):
             rt_name = 'evpn.route'
         else:
             rt_name = None
+            routes = None
+            return (False, routes)
+
         if (rt_type == 'evpn'):
             prefix = address.split(',')
 
