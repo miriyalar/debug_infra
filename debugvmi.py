@@ -62,7 +62,7 @@ class debugVertexVMI(baseVertex):
         agent['oper'] = self.agent_oper_db(self._get_agent_oper_db, vertex)
         self._add_agent_to_context(vertex, agent)
         control = {}
-        control['oper'] = {}
+        control['oper'] = self.control_oper_db(self._get_control_oper_db, vertex)
         self._add_control_to_context(vertex, control)
 
     def _get_agent_oper_db(self, introspect, vertex):
@@ -110,7 +110,32 @@ class debugVertexVMI(baseVertex):
         pstr = "Agent Verified interface %s %s" % (intf_rec['name'], 'with errors' if error else '')
         self.logger.info(pstr)
         oper['interface'] = intf_details
+
+        # bgp_as_a_service
+        bgp_asas_detail = introspect.get_bgpasas_details()
+        if not bgp_asas_detail:
+            self.logger.info("bgp_as_a_service doesnt exist")
+        else:
+            for bgp_asas in bgp_asas_detail['bgp_as_a_service_list']:
+                if bgp_asas['vmi_uuid'] == vmi_uuid:
+                    self.logger.info("Agent: Interface %s bgp_as_a_service is enabled" % (intf_rec['name']))
+                    oper['bgp-as-a-service'] = bgp_asas
         return oper
+
+    def _get_control_oper_db(self, introspect, vertex):
+        control = {}
+        vmi_uuid = vertex['uuid']
+
+        # bgp_neighbors
+        bgp_neighbor_list = introspect.get_bgpneighbor_list()
+        if not bgp_neighbor_list:
+            self.logger.info("bgp_neighbor_list doesnt exist")
+        else:
+            for bgp_neighbor in bgp_neighbor_list['neighbors']:
+                if bgp_neighbor['peer'] == vmi_uuid:
+                    self.logger.info("Control: Interface %s has bgp neighbor" % (vmi_uuid))
+                    control['bgp-neighbors'] = bgp_neighbor
+        return control
 
 def parse_args(args):
     parser = ArgumentParser(description=debugVertexVMI.__doc__, add_help=True, formatter_class=RawTextHelpFormatter)
