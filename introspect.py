@@ -271,6 +271,11 @@ class ControllerIntrospect(Introspect):
             return (True, route_list)
         return (False, routes)
 
+    def get_bgpneighbor_list(self):
+        url_path = 'Snh_BgpNeighborReq'
+        return self.get(path=url_path)
+
+
 class AgentIntrospect(Introspect):
     def get(self, path=None, ref=None):
         response = super(AgentIntrospect, self).get(path)
@@ -588,6 +593,10 @@ class AgentIntrospect(Introspect):
             else:
                 adjacency_list = adjacencies
         return adjacency_list
+
+    def get_bgpasas_details(self):
+        url_path = 'Snh_BgpAsAServiceSandeshReq'
+        return self.get(path=url_path)
 
 
 verify_list = [
